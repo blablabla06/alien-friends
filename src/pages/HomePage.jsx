@@ -8,16 +8,26 @@ import DailyMissionCard from '../components/DailyMissionCard.jsx'
 export default function HomePage() {
   const navigate = useNavigate()
   const { state } = useGameState()
-  const { lang, setLang, t } = useLang()
-
+  const { lang, setLang } = useLang()
+  const homeText = lang === 'zh'
+    ? {
+        tagline: '一个关于谣言、偏见与群体归属的 2 分钟可玩预告。',
+        play: '试玩 2 分钟原型',
+        archive: '打开练习档案',
+      }
+    : {
+        tagline: 'A 2-minute playable trailer about rumours, bias, and group belonging.',
+        play: 'Play 2-Min Prototype',
+        archive: 'Open practice archive',
+      }
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 gap-8">
       <header className="text-center">
         <h1 className="text-5xl font-bold font-display text-coral mb-2">
-          Alien Friends
+          Alien, Apparently
         </h1>
         <p className="text-lg text-warm-white opacity-70">
-          {t('home.tagline')}
+          {homeText.tagline}
         </p>
       </header>
 
@@ -37,7 +47,7 @@ export default function HomePage() {
                 : { color: '#F5F0E8', opacity: 0.5 }
             }
           >
-            {l === 'en' ? 'EN' : '中文'}
+            {l === 'en' ? 'EN' : 'ZH'}
           </button>
         ))}
       </div>
@@ -50,18 +60,18 @@ export default function HomePage() {
       <DailyMissionCard />
 
       <button
-        onClick={() => navigate('/select')}
+        onClick={() => navigate('/prototype')}
         className="px-10 py-4 rounded-2xl text-xl font-bold font-display transition-transform hover:scale-105 active:scale-95"
         style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
       >
-        {t('home.startTalking')}
+        {homeText.play}
       </button>
 
       <button
-        onClick={() => navigate('/growth')}
+        onClick={() => navigate('/select')}
         className="text-sm underline text-teal-chrome opacity-80 hover:opacity-100"
       >
-        {t('home.viewGrowthReport')}
+        {homeText.archive}
       </button>
     </div>
   )

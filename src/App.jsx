@@ -8,6 +8,7 @@ import DialogueScreen      from './pages/DialogueScreen.jsx'
 import EndingScreen        from './pages/EndingScreen.jsx'
 import ResultsScreen       from './pages/ResultsScreen.jsx'
 import GrowthReportPage    from './pages/GrowthReportPage.jsx'
+import AlienPrototypePage   from './pages/AlienPrototypePage.jsx'
 
 export default function App() {
   return (
@@ -16,6 +17,7 @@ export default function App() {
       <BrowserRouter>
         <Routes>
           <Route path="/"                       element={<HomePage />} />
+          <Route path="/prototype"              element={<AlienPrototypePage />} />
           <Route path="/select"                 element={<ScenarioSelectPage />} />
           <Route path="/intro/:scenarioId"      element={<ScenarioIntroPage />} />
           <Route path="/dialogue/:scenarioId"   element={<DialogueScreen />} />
