@@ -26,25 +26,33 @@ const BASE_STATE = {
 const CHARACTERS = {
   mira: {
     name: 'Mira',
+    groupRole: 'Member',
     role: 'Social connector',
+    revealedInfo: 'Frames Evan before he arrives',
     color: '#4ECDC4',
     text: '#102a2a',
   },
   daniel: {
     name: 'Daniel',
+    groupRole: 'Member',
     role: 'Frustrated teammate',
+    revealedInfo: 'Hurt by the slide change',
     color: '#FFD166',
     text: '#2b2008',
   },
   evan: {
     name: 'Evan',
+    groupRole: 'Member',
     role: 'The labelled outsider',
+    revealedInfo: 'Acting with missing context',
     color: '#A78BFA',
     text: '#18122b',
   },
   sara: {
     name: 'Sara',
+    groupRole: 'Leader',
     role: 'Group leader',
+    revealedInfo: 'Trying to keep the decision respectful',
     color: '#FF8B5E',
     text: '#2b1208',
   },
@@ -355,21 +363,38 @@ function getEnding(scores, hidden) {
   }
 }
 
-function CharacterToken({ id, active, distorted, lang }) {
-  const character = CHARACTERS[id]
+function GroupRoster({ currentSpeaker, revealedIds, lang, ui }) {
   return (
-    <div className={`af-character-token ${active ? 'active' : ''} ${distorted ? 'distorted' : ''}`}>
-      <div
-        className="af-character-face"
-        style={{ backgroundColor: character.color, color: character.text }}
-      >
-        {character.name[0]}
+    <section className="af-panel af-roster-panel">
+      <h2>{ui.groupNotes}</h2>
+      <div className="af-roster-list">
+        {Object.entries(CHARACTERS).map(([id, character]) => {
+          const revealed = revealedIds.has(id)
+          const active = id === currentSpeaker
+
+          return (
+            <div className={`af-roster-item ${active ? 'active' : ''}`} key={id}>
+              <div
+                className="af-character-face"
+                style={{ backgroundColor: character.color, color: character.text }}
+              >
+                {character.name[0]}
+              </div>
+              <div className="af-roster-copy">
+                <div className="af-roster-topline">
+                  <span className="af-character-name">{character.name}</span>
+                  <span className="af-roster-tag">{prototypeText(character.groupRole, lang)}</span>
+                </div>
+                <div className={`af-roster-detail ${revealed ? 'revealed' : ''}`}>
+                  {revealed ? prototypeText(character.revealedInfo, lang) : ui.noDetailYet}
+                </div>
+              </div>
+              {active && <span className="af-speaking-dot">{ui.speakingNow}</span>}
+            </div>
+          )
+        })}
       </div>
-      <div>
-        <div className="af-character-name">{character.name}</div>
-        <div className="af-character-role">{prototypeText(character.role, lang)}</div>
-      </div>
-    </div>
+    </section>
   )
 }
 
@@ -426,7 +451,10 @@ export default function AlienPrototypePage() {
   const scene = SCENES[sceneIndex]
   const speaker = CHARACTERS[scene.speaker]
   const ending = useMemo(() => getEnding(scores, hidden), [scores, hidden])
-  const alienIntensity = clamp(hidden.labelPower + hidden.rumour * 0.35)
+  const revealedCharacterIds = useMemo(
+    () => new Set(SCENES.slice(0, sceneIndex + 1).map(item => item.speaker)),
+    [sceneIndex],
+  )
 
   function completeTurn(choiceId, choice, feedback) {
     const nextScores = applyDelta(scores, choice.effects.scores)
@@ -615,34 +643,32 @@ export default function AlienPrototypePage() {
           font-size: 14px;
         }
 
-        .af-character-row {
-          display: grid;
-          grid-template-columns: repeat(4, minmax(0, 1fr));
-          gap: 10px;
-          max-width: 760px;
-          margin-top: 24px;
+        .af-roster-panel {
+          padding: 13px;
         }
 
-        .af-character-token {
+        .af-roster-list {
+          display: grid;
+          gap: 8px;
+        }
+
+        .af-roster-item {
           min-width: 0;
-          display: flex;
+          display: grid;
+          grid-template-columns: auto minmax(0, 1fr) auto;
           align-items: center;
           gap: 9px;
-          border: 1px solid rgba(255,255,255,0.12);
-          background: rgba(10,12,28,0.54);
+          border: 1px solid rgba(255,255,255,0.1);
+          background: rgba(10,12,28,0.34);
           border-radius: 12px;
           padding: 9px;
-          transition: transform 0.2s ease, border-color 0.2s ease, filter 0.2s ease;
+          transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
         }
 
-        .af-character-token.active {
+        .af-roster-item.active {
           border-color: rgba(255,139,94,0.66);
-          transform: translateY(-2px);
-        }
-
-        .af-character-token.distorted {
-          filter: hue-rotate(70deg) saturate(1.55);
-          box-shadow: 0 0 0 1px rgba(167,139,250,0.18), 0 0 28px rgba(167,139,250,0.22);
+          background: rgba(255,139,94,0.11);
+          transform: translateY(-1px);
         }
 
         .af-character-face {
@@ -655,7 +681,22 @@ export default function AlienPrototypePage() {
           flex-shrink: 0;
         }
 
+        .af-roster-copy {
+          min-width: 0;
+          display: grid;
+          gap: 4px;
+        }
+
+        .af-roster-topline {
+          min-width: 0;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 8px;
+        }
+
         .af-character-name {
+          min-width: 0;
           font-size: 13px;
           font-weight: 900;
           color: #F5F0E8;
@@ -664,12 +705,32 @@ export default function AlienPrototypePage() {
           text-overflow: ellipsis;
         }
 
-        .af-character-role {
-          font-size: 10px;
-          color: rgba(245,240,232,0.44);
+        .af-roster-tag,
+        .af-speaking-dot {
           white-space: nowrap;
+          border-radius: 999px;
+          background: rgba(78,205,196,0.13);
+          color: #4ECDC4;
+          padding: 3px 7px;
+          font-size: 10px;
+          font-weight: 900;
+        }
+
+        .af-speaking-dot {
+          background: rgba(255,139,94,0.16);
+          color: #FF8B5E;
+        }
+
+        .af-roster-detail {
+          font-size: 11px;
+          line-height: 1.35;
+          color: rgba(245,240,232,0.42);
           overflow: hidden;
           text-overflow: ellipsis;
+        }
+
+        .af-roster-detail.revealed {
+          color: rgba(245,240,232,0.72);
         }
 
         .af-dialogue {
@@ -1149,7 +1210,6 @@ export default function AlienPrototypePage() {
             min-height: 560px;
           }
 
-          .af-character-row,
           .af-memory-grid {
             grid-template-columns: repeat(2, minmax(0, 1fr));
           }
@@ -1344,17 +1404,6 @@ export default function AlienPrototypePage() {
                   <p>{p(scene.objective)}</p>
                 </div>
 
-                <div className="af-character-row">
-                  {Object.keys(CHARACTERS).map(id => (
-                    <CharacterToken
-                      key={id}
-                      id={id}
-                      active={id === scene.speaker}
-                      lang={lang}
-                      distorted={id === 'evan' && !scene.perspective && alienIntensity > 44}
-                    />
-                  ))}
-                </div>
               </div>
 
               <div className="af-dialogue">
@@ -1376,6 +1425,12 @@ export default function AlienPrototypePage() {
           </section>
 
           <aside className="af-side">
+            <GroupRoster
+              currentSpeaker={scene.speaker}
+              revealedIds={revealedCharacterIds}
+              lang={lang}
+              ui={ui}
+            />
 
             {false && (scene.fact || scene.assumption) && (
               <section className="af-panel">

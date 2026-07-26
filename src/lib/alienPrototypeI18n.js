@@ -1,6 +1,9 @@
 export const prototypeUi = {
   en: {
     subtitle: '2-minute playable trailer prototype',
+    groupNotes: 'Group Notes',
+    speakingNow: 'Speaking',
+    noDetailYet: 'No detail yet',
     home: 'Home',
     scene: 'Scene',
     customResponse: 'Write your own',
@@ -51,6 +54,9 @@ export const prototypeUi = {
   },
   zh: {
     subtitle: '2分钟可玩预告原型',
+    groupNotes: '小组备注',
+    speakingNow: '发言中',
+    noDetailYet: '暂无细节',
     home: '首页',
     scene: '场景',
     customResponse: '自己输入回应',
@@ -106,6 +112,12 @@ const zh = {
   'Frustrated teammate': '受挫的组员',
   'The labelled outsider': '被贴标签的局外人',
   'Group leader': '小组组长',
+  'Member': '成员',
+  'Leader': '组长',
+  'Frames Evan before he arrives': '在 Evan 到场前先给出判断框架',
+  'Hurt by the slide change': '因为幻灯片被改而受影响',
+  'Acting with missing context': '带着缺失的背景行动',
+  'Trying to keep the decision respectful': '试图让决定保持尊重',
 
   'Go with the group': '跟随小组判断',
   'Ask for facts': '询问事实',
