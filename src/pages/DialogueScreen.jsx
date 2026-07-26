@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
+import { useLang, resolveField } from '../context/LanguageContext.jsx'
 import { buildCharacterPrompt, buildClosingPrompt, buildSuggestionOnlyPrompt } from '../lib/aiCharacterPrompt.js'
 import { callLLM } from '../lib/llmClient.js'
 import { scoreResponse } from '../lib/scoringEngine.js'
@@ -15,6 +16,7 @@ export default function DialogueScreen() {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
   const { state, actions } = useGameState()
+  const { lang, t } = useLang()
   const { currentScenario: scenario, currentCharacter: character, dialogueHistory, connectionMood, turnCount, currentScores } = state
   const liveComposite = currentScores?.composite ?? 0
 
@@ -22,7 +24,7 @@ export default function DialogueScreen() {
   const [suggestions, setSuggestions]     = useState([])
   const [isLoading, setIsLoading]         = useState(false)
   const [npcTyping, setNpcTyping]         = useState(false)
-  const [errorBanner, setErrorBanner]     = useState('')
+  const [llmError, setLlmError]           = useState(null)   // { message, canRetry }
   const [conversationEnded, setConversationEnded] = useState(false)
   // independent loading state for the help button so it doesn't block the main input
   const [isFetchingSuggestions, setIsFetchingSuggestions] = useState(false)
@@ -30,6 +32,10 @@ export default function DialogueScreen() {
   // Hard guard: survives StrictMode's double-invoke because refs are NOT reset
   // between the simulated unmount/remount cycle in development mode.
   const openingFiredRef = useRef(false)
+  // Count how many turns the player typed themselves (vs tapping a suggestion)
+  const freeTextCountRef = useRef(0)
+  // Preserves the player's last send so it can be retried without retyping
+  const pendingRetryRef = useRef(null)   // { text, isSuggestion }
 
   // ── Guard: redirect if no scenario loaded ──
   useEffect(() => {
@@ -48,7 +54,7 @@ export default function DialogueScreen() {
 
     actions.addDialogueEntry({
       role: 'npc',
-      text: scenario.openingLine,
+      text: resolveField(scenario.openingLine, lang),
       timestamp: Date.now(),
     })
   }, []) // eslint-disable-line
@@ -61,11 +67,25 @@ export default function DialogueScreen() {
   if (!scenario || !character) return null
 
   // ── Core turn handler ──
-  async function handleSend(text) {
+  // isSuggestion=true when the player tapped a suggested reply; false when they typed manually
+  async function handleSend(text, isSuggestion = false) {
     if (!text.trim() || isLoading || conversationEnded) return
+
+    setLlmError(null)
+
+    // Track free-text turns and tick the mission event
+    if (!isSuggestion) {
+      freeTextCountRef.current += 1
+      actions.tickMissions({
+        type:          'FREE_TEXT_USED',
+        freeTextCount: freeTextCountRef.current,
+      })
+    }
 
     const userEntry = { role: 'user', text: text.trim(), timestamp: Date.now() }
     actions.addDialogueEntry(userEntry)
+    // Preserve the player's text before clearing — used by the retry button
+    pendingRetryRef.current = { text: text.trim(), isSuggestion }
     setInputText('')
     setSuggestions([])
 
@@ -75,32 +95,51 @@ export default function DialogueScreen() {
     // ── End-condition: player has used their last turn ──
     const isLastTurn = (turnCount + 1) >= maxTurns
 
-    // Score and NPC reply run in parallel — scoring is fire-and-forget
-    // relative to the NPC turn so it never blocks the chat UI
-    const scoringPromise = scoreResponse(text, character, updatedHistory)
+    // Score and NPC reply run in parallel.
+    // Scoring is fire-and-forget: if it fails we skip that turn's score silently.
+    const scoringPromise = scoreResponse(text, character, updatedHistory, undefined, lang).catch(() => null)
 
     if (isLastTurn) {
-      // Fetch closing line; we'll wait for scoring alongside it
       const [scores] = await Promise.all([
         scoringPromise,
         fetchClosingLine(updatedHistory),
       ])
-      actions.addScoreEntry(scores)
+      if (scores) actions.addScoreEntry(scores)
     } else {
       const [scores] = await Promise.all([
         scoringPromise,
         fetchNpcTurn(text, updatedHistory),
       ])
-      actions.addScoreEntry(scores)
+      if (scores) actions.addScoreEntry(scores)
     }
+  }
+
+  // ── Retry handler — re-attempts the NPC fetch for the last player turn ──
+  // The user entry is already in dialogueHistory, so we just redo the NPC call.
+  async function handleRetry() {
+    if (isLoading || !pendingRetryRef.current) return
+    setLlmError(null)
+
+    const maxTurns = scenario.maxTurns ?? 6
+    const isLastTurn = turnCount >= maxTurns   // turnCount already includes this turn
+
+    const scoringPromise = Promise.resolve(null)  // skip scoring on retry
+
+    if (isLastTurn) {
+      await fetchClosingLine(dialogueHistory)
+    } else {
+      await fetchNpcTurn(pendingRetryRef.current.text, dialogueHistory)
+    }
+    // scoring was already fired on the original attempt; don't double-count
+    void scoringPromise
   }
 
   async function fetchNpcTurn(userText, history) {
     setIsLoading(true)
     setNpcTyping(true)
-    setErrorBanner('')
+    setLlmError(null)
 
-    const messages = buildCharacterPrompt(character, scenario, history, userText, liveComposite)
+    const messages = buildCharacterPrompt(character, scenario, history, userText, liveComposite, lang)
 
     console.log('[AlienFriends] Sending to LLM:', messages)
 
@@ -112,7 +151,12 @@ export default function DialogueScreen() {
     setIsLoading(false)
 
     if (!result.ok) {
-      setErrorBanner(`LLM error: ${result.error}`)
+      setLlmError({
+        message: result.timedOut
+          ? t('dialogue.connectionTimedOut')
+          : t('dialogue.connectionInterrupted'),
+        canRetry: true,
+      })
       return
     }
 
@@ -145,7 +189,7 @@ export default function DialogueScreen() {
   async function fetchClosingLine(history) {
     setIsLoading(true)
     setNpcTyping(true)
-    setErrorBanner('')
+    setLlmError(null)
     setSuggestions([])
 
     // Derive outcome from the running mood score
@@ -155,7 +199,7 @@ export default function DialogueScreen() {
       finalMood <= 35 ? 'negative' :
       'neutral'
 
-    const messages = buildClosingPrompt(character, scenario, history, outcome)
+    const messages = buildClosingPrompt(character, scenario, history, outcome, lang)
 
     console.log('[AlienFriends] Closing prompt:', messages)
 
@@ -167,8 +211,13 @@ export default function DialogueScreen() {
     setIsLoading(false)
 
     if (!result.ok) {
-      setErrorBanner(`LLM error: ${result.error}`)
-      // Still end the conversation even on error
+      setLlmError({
+        message: result.timedOut
+          ? t('dialogue.connectionTimedOut')
+          : t('dialogue.connectionInterrupted'),
+        canRetry: true,
+      })
+      // Still let the player proceed to ending even on error
       setConversationEnded(true)
       return
     }
@@ -199,7 +248,7 @@ export default function DialogueScreen() {
     setIsFetchingSuggestions(true)
     actions.incrementHelp()
 
-    const messages = buildSuggestionOnlyPrompt(character, scenario, dialogueHistory)
+    const messages = buildSuggestionOnlyPrompt(character, scenario, dialogueHistory, lang)
     const result   = await callLLM(messages)
 
     setIsFetchingSuggestions(false)
@@ -232,10 +281,24 @@ export default function DialogueScreen() {
         </div>
       </div>
 
-      {/* Error banner */}
-      {errorBanner && (
-        <div className="mx-4 mt-3 px-4 py-2 rounded-xl text-sm text-warm-white bg-red-900/40 border border-red-500/30">
-          {errorBanner}
+      {/* Friendly error card with retry */}
+      {llmError && (
+        <div className="mx-4 mt-3 px-4 py-3 rounded-2xl flex flex-col gap-2 border border-white/10"
+          style={{ backgroundColor: 'rgba(255,139,94,0.10)' }}
+        >
+          <p className="text-sm" style={{ color: '#F5F0E8', opacity: 0.85 }}>
+            {llmError.message}
+          </p>
+          {llmError.canRetry && !conversationEnded && (
+            <button
+              onClick={handleRetry}
+              disabled={isLoading}
+              className="self-start text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity disabled:opacity-40"
+              style={{ backgroundColor: '#FF8B5E22', color: '#FF8B5E', border: '1px solid #FF8B5E44' }}
+            >
+              {t('tryAgain')}
+            </button>
+          )}
         </div>
       )}
 
@@ -243,7 +306,7 @@ export default function DialogueScreen() {
       {scenario.setup && (
         <div className="mx-4 mt-4 mb-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-center">
           <p className="text-xs italic leading-relaxed" style={{ color: '#F5F0E8', opacity: 0.55 }}>
-            {scenario.setup}
+            {resolveField(scenario.setup, lang)}
           </p>
         </div>
       )}
@@ -274,7 +337,7 @@ export default function DialogueScreen() {
             className="w-full py-3 rounded-2xl text-sm font-semibold transition-opacity"
             style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
           >
-            See how it went →
+            {t('dialogue.seeHowItWent')}
           </button>
         ) : (
           <>
@@ -307,7 +370,7 @@ export default function DialogueScreen() {
                 ) : (
                   <>
                     <span style={{ fontSize: '0.75rem' }}>💡</span>
-                    <span>Need a suggestion?</span>
+                    <span>{ t('dialogue.needSuggestion') }</span>
                   </>
                 )}
               </button>
@@ -316,7 +379,7 @@ export default function DialogueScreen() {
                 onClick={() => navigate('/results')}
                 className="text-xs text-teal-chrome opacity-50 hover:opacity-80"
               >
-                End conversation early
+                {t('dialogue.endEarly')}
               </button>
             </div>
           </>

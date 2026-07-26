@@ -1,11 +1,27 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
 import { loadProgress, saveProgress } from '../lib/persistence.js'
+import { generateMissionsForDate, tickMissions, todayKey } from '../lib/dailyMissions.js'
 
 // ─── initial state ────────────────────────────────────────────────────────────
 
 // Load persisted progress once at module evaluation time.
 // (Safe: this file is only evaluated in the browser.)
 const persisted = loadProgress()
+
+/** Ensure dailyMissions is fresh for today — regenerate if it's a new day */
+function initDailyMissions(stored) {
+  const today = todayKey()
+  if (stored.generatedDate === today && stored.missions.length > 0) {
+    return stored   // already up-to-date
+  }
+  // New day (or first run) — generate a fresh set
+  const defs = generateMissionsForDate(today)
+  return {
+    generatedDate:           today,
+    missions:                defs.map(def => ({ def, completed: false })),
+    scenariosCompletedToday: 0,
+  }
+}
 
 const initialState = {
   // ── Session fields (never persisted) ──
@@ -29,6 +45,12 @@ const initialState = {
   streak:             persisted.streak,
   lastPlayedDate:     persisted.lastPlayedDate,
   completedScenarios: persisted.completedScenarios,  // string[]
+
+  // Cross-scenario history — array of SessionSummary objects, newest first, capped at 20
+  sessionLog:         persisted.sessionLog,           // SessionSummary[]
+
+  // Daily missions — regenerated each calendar day, persisted between sessions
+  dailyMissions:      initDailyMissions(persisted.dailyMissions),
 }
 
 // ─── reducer ─────────────────────────────────────────────────────────────────
@@ -126,11 +148,76 @@ function reducer(state, action) {
       return {
         ...state,
         completedScenarios: [...state.completedScenarios, id],
+        dailyMissions: {
+          ...state.dailyMissions,
+          scenariosCompletedToday: (state.dailyMissions.scenariosCompletedToday ?? 0) + 1,
+        },
       }
     }
 
     case 'END_SCENARIO':
       return { ...state, currentScenario: null, currentCharacter: null }
+
+    // Mark one or more missions complete by ID; also grant XP for each
+    case 'COMPLETE_MISSION': {
+      const { missionId } = action
+      const dm = state.dailyMissions
+      const missions = dm.missions.map(m =>
+        m.def.id === missionId && !m.completed
+          ? { ...m, completed: true }
+          : m
+      )
+      return {
+        ...state,
+        dailyMissions: { ...dm, missions },
+      }
+    }
+
+    // Evaluate a game event against all incomplete missions; mark any that pass
+    case 'TICK_MISSIONS': {
+      const dm  = state.dailyMissions
+      const ids = tickMissions(dm.missions, action.event)
+      if (!ids.length) return state
+      const missions = dm.missions.map(m =>
+        ids.includes(m.def.id) ? { ...m, completed: true } : m
+      )
+      return {
+        ...state,
+        dailyMissions: { ...dm, missions },
+      }
+    }
+
+    case 'SAVE_SESSION': {
+      // Build a compact SessionSummary from the current scenario + scoring data
+      const { currentScenario: sc, currentScores: cs, scoringHistory: sh, dialogueHistory: dh } = state
+      if (!sc) return state
+
+      // Merge each scored turn with the corresponding user dialogue entry for the quote
+      const userTurns   = dh.filter(e => e.role === 'user')
+      const mergedTurns = sh.map((score, i) => ({
+        ...score,
+        text: userTurns[i]?.text ?? '',
+      }))
+
+      const summary = {
+        scenarioId:    sc.id,
+        scenarioTitle: sc.title,
+        difficultyTier: sc.difficultyTier ?? 'easy',
+        playedAt:      new Date().toISOString(),
+        composite:     cs.composite ?? 0,
+        dimAverages: {
+          clarity:    cs.clarity    ?? 0,
+          politeness: cs.politeness ?? 0,
+          empathy:    cs.empathy    ?? 0,
+          expression: cs.expression ?? 0,
+        },
+        turnLog: mergedTurns,
+      }
+
+      // Newest first, cap at 20 entries
+      const updated = [summary, ...state.sessionLog].slice(0, 20)
+      return { ...state, sessionLog: updated }
+    }
 
     default:
       return state
@@ -153,6 +240,8 @@ export function GameStateProvider({ children }) {
       lastPlayedDate:     state.lastPlayedDate,
       completedScenarios: state.completedScenarios,
       currentScores:      state.currentScores,
+      sessionLog:         state.sessionLog,
+      dailyMissions:      state.dailyMissions,
     })
   }, [
     state.xp,
@@ -161,6 +250,8 @@ export function GameStateProvider({ children }) {
     state.lastPlayedDate,
     state.completedScenarios,
     state.currentScores,
+    state.sessionLog,
+    state.dailyMissions,
   ])
 
   const actions = {
@@ -168,6 +259,9 @@ export function GameStateProvider({ children }) {
     addDialogueEntry:   (entry)  => dispatch({ type: 'ADD_DIALOGUE_ENTRY', entry }),
     addScoreEntry:      (entry)  => dispatch({ type: 'ADD_SCORE_ENTRY', entry }),
     updateScores:       (scores) => dispatch({ type: 'UPDATE_SCORES', scores }), // legacy alias
+    saveSession:        ()       => dispatch({ type: 'SAVE_SESSION' }),
+    tickMissions:       (event)  => dispatch({ type: 'TICK_MISSIONS', event }),
+    completeMission:    (missionId) => dispatch({ type: 'COMPLETE_MISSION', missionId }),
     setMood:            (mood)   => dispatch({ type: 'SET_MOOD', mood }),
     shiftMood:          (shift)  => dispatch({ type: 'SHIFT_MOOD', shift }),
     addXp:              (amount) => dispatch({ type: 'ADD_XP', amount }),

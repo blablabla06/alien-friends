@@ -1,13 +1,19 @@
 {
   "id": "office-conflict",
-  "title": "Coworker Conflict",
+  "title": { "en": "Coworker Conflict", "zh": "同事冲突" },
   "category": "coworker-conflict",
   "difficultyTier": "medium",
   "npcRef": "coworker-morgan",
   "locationRef": "A small glass-walled meeting room. You've both been asked to resolve a project disagreement.",
   "setup": "Morgan sits across from you with crossed arms. There's unresolved tension after last month's miscommunication.",
-  "storyPlot": "Last month, something went wrong on the Henderson project — deadlines were missed, blame got passed around, and you and Morgan ended up on opposite sides of a very tense email chain. You're not sure who was more at fault. Your manager has now put you both in a meeting room together with one instruction: sort it out. Morgan got here first and chose the seat that faces the door. The room is small and glass-walled, visible to the rest of the office. Whatever happens in the next few minutes, everyone will be able to see — if not hear — how it goes.",
-  "openingLine": "Morgan glances at the door, then back at you. 'So. Are we going to talk about what happened, or are we pretending it's fine?'",
+  "storyPlot": {
+    "en": "Last month, something went wrong on the Henderson project — deadlines were missed, blame got passed around, and you and Morgan ended up on opposite sides of a very tense email chain. You're not sure who was more at fault. Your manager has now put you both in a meeting room together with one instruction: sort it out. Morgan got here first and chose the seat that faces the door. The room is small and glass-walled, visible to the rest of the office. Whatever happens in the next few minutes, everyone will be able to see — if not hear — how it goes.",
+    "zh": "上个月，亨德森项目出了问题——截止日期没赶上，责任被相互推诿，你和摩根最终站在了一封措辞激烈的邮件往来的对立两端。你说不清楚到底谁的责任更大。现在，你们的经理把你们关进了同一间会议室，只留下一句话：自己解决。摩根比你先到，选了那个朝向门口的座位。房间很小，四面玻璃墙，办公室里的所有人都看得见里面发生的一切。接下来这几分钟里无论发生什么，大家都会亲眼目睹——即便听不到声音。"
+  },
+  "openingLine": {
+    "en": "Morgan glances at the door, then back at you. 'So. Are we going to talk about what happened, or are we pretending it's fine?'",
+    "zh": "摩根朝门口看了一眼，再把目光转回你身上。「那么，我们是要谈谈到底发生了什么，还是继续装作没事？」"
+  },
   "successCondition": "Composite score ≥ 70 and de-escalation acknowledged in dialogue",
   "failureCondition": "Composite score < 40 OR mood cools three turns in a row",
   "scoringFocus": ["clarity", "empathy", "politeness"],

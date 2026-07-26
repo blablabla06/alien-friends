@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { GameStateProvider } from './context/GameStateContext.jsx'
+import { LanguageProvider } from './context/LanguageContext.jsx'
 import HomePage           from './pages/HomePage.jsx'
 import ScenarioSelectPage  from './pages/ScenarioSelectPage.jsx'
 import ScenarioIntroPage   from './pages/ScenarioIntroPage.jsx'
@@ -10,6 +11,7 @@ import GrowthReportPage    from './pages/GrowthReportPage.jsx'
 
 export default function App() {
   return (
+    <LanguageProvider>
     <GameStateProvider>
       <BrowserRouter>
         <Routes>
@@ -23,5 +25,6 @@ export default function App() {
         </Routes>
       </BrowserRouter>
     </GameStateProvider>
+    </LanguageProvider>
   )
 }

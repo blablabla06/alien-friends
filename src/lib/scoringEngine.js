@@ -35,9 +35,10 @@ export const DEFAULT_WEIGHTS = {
  * @param {string}   userText              - the player's message to score
  * @param {object}   character             - full character JSON
  * @param {Array}    conversationContext   - recent dialogue history [{role, text}]
+ * @param {'en'|'zh'} lang                - output language for the feedback field
  * @returns {{ role, content }[]}
  */
-function buildScoringPrompt(userText, character, conversationContext) {
+function buildScoringPrompt(userText, character, conversationContext, lang = 'en') {
   const warmerTriggers = (character.emotionalState?.triggers?.warmer ?? []).join('\n  - ')
   const coolerTriggers = (character.emotionalState?.triggers?.cooler ?? []).join('\n  - ')
   const personality    = (character.personalityTraits ?? []).join(', ')
@@ -48,6 +49,12 @@ function buildScoringPrompt(userText, character, conversationContext) {
     .slice(-4)
     .map(e => `${e.role === 'user' ? 'Player' : character.name}: ${e.text}`)
     .join('\n')
+
+  const feedbackLangNote = lang === 'zh'
+    ? `## Language for "feedback" field
+Write the "feedback" string in Simplified Chinese (简体中文). Keep it natural and direct — one sentence, max 25 Chinese characters.`
+    : `## Language for "feedback" field
+Write the "feedback" string in English. One sentence, max 20 words.`
 
   const system = `You are a social-skills coaching judge for a game called Alien Friends.
 Your job is to score a single player message in the context of a conversation with a specific character.
@@ -77,9 +84,9 @@ Emotional baseline: ${baseline}
 Compute as a weighted average:
   composite = round(clarity*0.30 + empathy*0.30 + politeness*0.20 + expression*0.20)
 
-## feedback
-Write ONE sentence (max 20 words). Be specific and actionable — name exactly what worked or what missed.
-Good example: "Offering to sit together rather than advising hit the 'concrete small help' trigger well."
+${feedbackLangNote}
+Good example (EN): "Offering to sit together rather than advising hit the 'concrete small help' trigger well."
+Good example (ZH): "主动提出一起坐下来而非给建议，精准触发了"具体小帮助"的暖化条件。"
 Bad example: "Good job on showing empathy!"
 
 Respond with exactly this JSON shape (no extra keys, no trailing commas):
@@ -106,19 +113,10 @@ Respond with exactly this JSON shape (no extra keys, no trailing commas):
 
 // ─── JSON parser with retry ───────────────────────────────────────────────────
 
-/**
- * Parse the LLM's JSON response, stripping markdown fences if present.
- * Returns null if parsing fails after cleanup.
- *
- * @param {string} raw
- * @returns {object|null}
- */
 function parseScoringJson(raw) {
-  // Strip ``` fences
   let text = raw.trim()
   text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim()
 
-  // Some models wrap the JSON in an outer key — try to extract a bare {...}
   const firstBrace = text.indexOf('{')
   const lastBrace  = text.lastIndexOf('}')
   if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
@@ -126,8 +124,7 @@ function parseScoringJson(raw) {
   }
 
   try {
-    const obj = JSON.parse(text)
-    return obj
+    return JSON.parse(text)
   } catch {
     return null
   }
@@ -149,7 +146,7 @@ function clamp(n, min = 0, max = 100) {
   return Math.max(min, Math.min(max, n))
 }
 
-function heuristicScore(userText) {
+function heuristicScore(userText, lang = 'en') {
   const words = userText.trim().split(/\s+/).length
   const lengthScore  = words < 3 ? 40 : words > 50 ? 60 : 80
   const slangPenalty = countMatches(userText, CLARITY_PENALTIES) * 15
@@ -158,7 +155,8 @@ function heuristicScore(userText) {
   const empathy      = clamp(30 + countMatches(userText, EMPATHY_SIGNALS) * 20)
   const expression   = clamp(30 + countMatches(userText, EXPRESSION_SIGNALS) * 20)
   const composite    = Math.round(clarity * 0.30 + empathy * 0.30 + politeness * 0.20 + expression * 0.20)
-  return { clarity, politeness, empathy, expression, composite, feedback: 'Scored offline — LLM unavailable.' }
+  const feedback     = lang === 'zh' ? '离线评分 — LLM 暂不可用。' : 'Scored offline — LLM unavailable.'
+  return { clarity, politeness, empathy, expression, composite, feedback }
 }
 
 // ─── main export ─────────────────────────────────────────────────────────────
@@ -171,43 +169,35 @@ function heuristicScore(userText) {
  * @param {object} character             - full character JSON
  * @param {Array}  conversationContext   - recent dialogue history [{role, text}]
  * @param {object} [weights]             - optional override for dimension weights
- * @returns {Promise<{
- *   clarity: number,
- *   politeness: number,
- *   empathy: number,
- *   expression: number,
- *   composite: number,
- *   feedback: string,
- * }>}
+ * @param {'en'|'zh'} [lang]            - language for feedback field
  */
-export async function scoreResponse(userText, character, conversationContext = [], weights = DEFAULT_WEIGHTS) {
+export async function scoreResponse(userText, character, conversationContext = [], weights = DEFAULT_WEIGHTS, lang = 'en') {
   if (!userText?.trim()) {
-    return { clarity: 0, politeness: 0, empathy: 0, expression: 0, composite: 0, feedback: 'No message to score.' }
+    const empty = lang === 'zh' ? '没有消息可评分。' : 'No message to score.'
+    return { clarity: 0, politeness: 0, empathy: 0, expression: 0, composite: 0, feedback: empty }
   }
 
-  const messages = buildScoringPrompt(userText, character, conversationContext)
+  const messages = buildScoringPrompt(userText, character, conversationContext, lang)
 
   let result
   try {
     result = await callLLM(messages)
   } catch {
-    return heuristicScore(userText)
+    return heuristicScore(userText, lang)
   }
 
   if (!result.ok) {
     console.warn('[scoringEngine] LLM call failed, using heuristic fallback:', result.error)
-    return heuristicScore(userText)
+    return heuristicScore(userText, lang)
   }
 
   const parsed = parseScoringJson(result.text)
 
   if (!parsed || typeof parsed.composite !== 'number') {
     console.warn('[scoringEngine] Malformed JSON from LLM, using heuristic fallback. Raw:', result.text)
-    return heuristicScore(userText)
+    return heuristicScore(userText, lang)
   }
 
-  // Re-compute composite from raw dimensions using our configurable weights,
-  // in case the model drifted from the formula.
   const w = { ...DEFAULT_WEIGHTS, ...weights }
   const clarity    = clamp(Math.round(parsed.clarity    ?? 50))
   const politeness = clamp(Math.round(parsed.politeness ?? 50))
@@ -232,13 +222,6 @@ export async function scoreResponse(userText, character, conversationContext = [
 
 // ─── scenario-level aggregation ──────────────────────────────────────────────
 
-/**
- * Compute overall scenario scores from a per-turn history array.
- * Returns the same shape as a single scoreResponse result, but averaged.
- *
- * @param {Array<{ clarity, politeness, empathy, expression, composite }>} history
- * @returns {{ clarity, politeness, empathy, expression, composite, feedback: string }}
- */
 export function aggregateScores(history) {
   if (!history?.length) {
     return { clarity: 0, politeness: 0, empathy: 0, expression: 0, composite: 0, feedback: '' }

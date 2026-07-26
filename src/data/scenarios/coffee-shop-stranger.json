@@ -1,13 +1,19 @@
 {
   "id": "coffee-shop-stranger",
-  "title": "Coffee Shop Chat",
+  "title": { "en": "Coffee Shop Chat", "zh": "咖啡馆闲聊" },
   "category": "stranger",
   "difficultyTier": "easy",
   "npcRef": "stranger",
   "locationRef": "A quiet corner café, mid-morning. Soft jazz, low chatter, warm light.",
   "setup": "You sit down near someone who's reading. They glance up briefly and give a small nod.",
-  "storyPlot": "You ducked into this café to escape the noise of the high street — a coffee, a seat, maybe a quiet moment. The corner table you picked has two chairs, and you've ended up sitting closer to a stranger than you intended. They have a book open in front of them, a half-drunk flat white beside it, and the easy self-sufficiency of someone who's comfortable being alone. You don't know anything about them yet — not their name, not their story. But something about the morning light and the low hum of the café makes this feel like the kind of place where a conversation could quietly happen, if you let it.",
-  "openingLine": "Alex looks up from his book. 'Oh — sorry, I didn't realise someone was sitting here. All good.'",
+  "storyPlot": {
+    "en": "You ducked into this café to escape the noise of the high street — a coffee, a seat, maybe a quiet moment. The corner table you picked has two chairs, and you've ended up sitting closer to a stranger than you intended. They have a book open in front of them, a half-drunk flat white beside it, and the easy self-sufficiency of someone who's comfortable being alone. You don't know anything about them yet — not their name, not their story. But something about the morning light and the low hum of the café makes this feel like the kind of place where a conversation could quietly happen, if you let it.",
+    "zh": "你溜进这家咖啡馆，想逃开大街上的喧嚣——一杯咖啡，一个座位，也许是片刻的宁静。你选的角落小桌旁有两把椅子，你发现自己坐得比预想中更靠近一个陌生人。他面前摆着一本翻开的书，旁边是一杯喝了一半的白咖啡，举手投足间带着一种独处时才有的自在。你对他一无所知——不知道名字，不知道故事。但不知为何，晨光透过窗棂洒落，咖啡馆里低沉的嗡嗡声萦绕耳畔，让这里感觉像一个对话可以悄然发生的地方——只要你愿意。"
+  },
+  "openingLine": {
+    "en": "Alex looks up from his book. 'Oh — sorry, I didn't realise someone was sitting here. All good.'",
+    "zh": "亚历克斯从书中抬起头。「哦——抱歉，我没注意到有人坐过来。没关系的。」"
+  },
   "successCondition": "Composite score ≥ 65 across all turns",
   "failureCondition": "Composite score < 35 OR NPC mood reaches 'cold' twice",
   "scoringFocus": ["empathy", "expression"],

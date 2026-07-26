@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
+import { useLang, resolveField } from '../context/LanguageContext.jsx'
 import { buildEpiloguePrompt } from '../lib/aiCharacterPrompt.js'
 import { callLLM } from '../lib/llmClient.js'
 
@@ -25,6 +26,7 @@ function moodToOverlay(mood) {
 export default function EndingScreen() {
   const navigate = useNavigate()
   const { state } = useGameState()
+  const { lang, t } = useLang()
   const {
     currentScenario: scenario,
     currentCharacter: character,
@@ -35,6 +37,7 @@ export default function EndingScreen() {
   const [epilogue, setEpilogue]     = useState('')
   const [isLoading, setIsLoading]   = useState(true)
   const [error, setError]           = useState('')
+  const [retryCount, setRetryCount] = useState(0)  // incrementing triggers a retry
   const firedRef = useRef(false)
 
   // Redirect guard — if game state was lost (e.g. hard refresh), go home
@@ -55,12 +58,13 @@ export default function EndingScreen() {
   // ── Single LLM call for the epilogue ──────────────────────────────────────
   useEffect(() => {
     if (!scenario || !character) return
-    if (firedRef.current) return      // StrictMode guard
+    if (firedRef.current && retryCount === 0) return  // StrictMode guard (initial mount only)
     firedRef.current = true
 
     async function fetchEpilogue() {
       setIsLoading(true)
-      const messages = buildEpiloguePrompt(character, scenario, dialogueHistory, outcome)
+      setError('')
+      const messages = buildEpiloguePrompt(character, scenario, dialogueHistory, outcome, lang)
 
       console.log('[AlienFriends] Epilogue prompt:', messages)
 
@@ -71,7 +75,11 @@ export default function EndingScreen() {
       setIsLoading(false)
 
       if (!result.ok) {
-        setError('Something went wrong writing the epilogue.')
+        setError(
+          result.timedOut
+            ? t('dialogue.connectionTimedOut')
+            : t('dialogue.connectionInterrupted')
+        )
         return
       }
 
@@ -88,15 +96,15 @@ export default function EndingScreen() {
     }
 
     fetchEpilogue()
-  }, []) // eslint-disable-line
+  }, [retryCount]) // eslint-disable-line
 
   if (!scenario || !character) return null
 
   // ── Outcome label ─────────────────────────────────────────────────────────
   const outcomeLabel =
-    outcome === 'positive' ? { text: 'Connection made', color: '#FF8B5E' } :
-    outcome === 'negative' ? { text: 'Still distant',   color: '#4ECDC4' } :
-                             { text: 'Left unresolved', color: '#F5C26B' }
+    outcome === 'positive' ? { text: t('ending.outcomes.positive'), color: '#FF8B5E' } :
+    outcome === 'negative' ? { text: t('ending.outcomes.negative'), color: '#4ECDC4' } :
+                             { text: t('ending.outcomes.neutral'),  color: '#F5C26B' }
 
   return (
     <div
@@ -119,7 +127,7 @@ export default function EndingScreen() {
 
         {/* Scenario title */}
         <p className="text-xs uppercase tracking-widest opacity-40" style={{ color: '#F5F0E8' }}>
-          {scenario.title}
+          {resolveField(scenario.title, lang)}
         </p>
 
         {/* Outcome badge */}
@@ -138,18 +146,27 @@ export default function EndingScreen() {
         <div className="w-10 h-px opacity-20" style={{ backgroundColor: '#F5F0E8' }} />
 
         {/* Epilogue text */}
-        <div className="text-center min-h-[6rem] flex items-center justify-center">
+        <div className="text-center min-h-[6rem] flex flex-col items-center justify-center gap-3">
           {isLoading ? (
             <p
               className="text-base italic leading-relaxed animate-pulse"
               style={{ color: '#F5F0E8', opacity: 0.45 }}
             >
-              Reflecting…
+              {t('ending.reflecting')}
             </p>
           ) : error ? (
-            <p className="text-sm" style={{ color: '#F5F0E8', opacity: 0.5 }}>
-              {error}
-            </p>
+            <>
+              <p className="text-sm" style={{ color: '#F5F0E8', opacity: 0.65 }}>
+                {error}
+              </p>
+              <button
+                onClick={() => setRetryCount(c => c + 1)}
+                className="text-xs font-semibold px-4 py-1.5 rounded-full transition-opacity hover:opacity-80"
+                style={{ backgroundColor: '#FF8B5E22', color: '#FF8B5E', border: '1px solid #FF8B5E44' }}
+              >
+                {t('tryAgain')}
+              </button>
+            </>
           ) : (
             <p
               className="text-base italic leading-relaxed"
@@ -167,7 +184,7 @@ export default function EndingScreen() {
             className="mt-4 w-full max-w-xs py-3.5 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-90"
             style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
           >
-            See your results →
+            {t('ending.seeResults')}
           </button>
         )}
 
@@ -178,7 +195,7 @@ export default function EndingScreen() {
             className="text-xs opacity-30 hover:opacity-60 transition-opacity"
             style={{ color: '#F5F0E8' }}
           >
-            Skip
+            {t('ending.skip')}
           </button>
         )}
       </div>

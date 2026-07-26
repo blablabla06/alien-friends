@@ -7,7 +7,18 @@
 
 // ─── internal ────────────────────────────────────────────────────────────────
 
-function assembleSystemPrompt(character, scenario) {
+const LANG_INSTRUCTIONS = {
+  zh: `## Language
+ALL of your output — npcResponse, suggestedReplies, and any other text fields — MUST be written in Simplified Chinese (简体中文). Do not use English in any field of your JSON response, even for style labels.`,
+  en: `## Language
+ALL of your output MUST be in English.`,
+}
+
+function langInstruction(lang) {
+  return LANG_INSTRUCTIONS[lang] ?? LANG_INSTRUCTIONS.en
+}
+
+function assembleSystemPrompt(character, scenario, lang = 'en') {
   const traits    = character.personalityTraits?.join(', ') ?? ''
   const tone      = character.communicationStyle?.tone ?? ''
   const verbosity = character.communicationStyle?.verbosity ?? ''
@@ -42,6 +53,8 @@ ${scenario.setup}
 ## Goal of this conversation (for the player)
 ${scenario.successCondition}
 
+${langInstruction(lang)}
+
 ## Response format — CRITICAL
 You must ALWAYS respond with valid JSON and nothing else:
 {
@@ -60,29 +73,14 @@ Stay completely in character. Do not break the fourth wall. Do not explain your 
 // ─── normal turn prompt ───────────────────────────────────────────────────────
 
 /**
- * Build the messages array to send to the LLM for one NPC turn.
- *
- * @param {object} character       - full character JSON
- * @param {object} scenario        - full scenario JSON
- * @param {Array}  dialogueHistory - [{ role:'user'|'npc', text }]
- * @param {string} userInput       - the player's latest message
- * @returns {{ role, content }[]}  - messages array ready for callLLM()
- */
-/**
  * Inject a reveal-condition hint into the system prompt when the live
  * composite score satisfies a character's revealConditions threshold.
- * This ensures the NPC naturally discloses locked information at the right moment.
- *
- * @param {object} character
- * @param {number} compositeScore  - current running composite (0-100)
- * @returns {string}               - additional system text (empty string if no conditions met)
  */
 function buildRevealHint(character, compositeScore) {
   const conditions = character.dialogueRules?.revealConditions ?? {}
   const triggered = []
 
   for (const [key, conditionText] of Object.entries(conditions)) {
-    // Parse the numeric threshold from condition strings like "score > 60" or "composite score > 75"
     const match = conditionText.match(/score\s*>\s*(\d+)/i)
     if (match) {
       const threshold = parseInt(match[1], 10)
@@ -94,7 +92,6 @@ function buildRevealHint(character, compositeScore) {
 
   if (!triggered.length) return ''
 
-  // Map condition keys to the corresponding "doNotRevealUntil" secrets
   const secrets = character.dialogueRules?.doNotRevealUntil ?? []
   const secretMap = {
     behindOnWork: secrets[0] ?? '',
@@ -111,9 +108,9 @@ function buildRevealHint(character, compositeScore) {
   return `\n\n## TRUST UNLOCKED — the player has earned some openness\nYou may now begin to let your guard down slightly in the following ways:\n${revealLines}\nDo this naturally and in-character — don't announce it, just let it slip through.`
 }
 
-export function buildCharacterPrompt(character, scenario, dialogueHistory, userInput, compositeScore = 0) {
+export function buildCharacterPrompt(character, scenario, dialogueHistory, userInput, compositeScore = 0, lang = 'en') {
   const revealHint = buildRevealHint(character, compositeScore)
-  const system = assembleSystemPrompt(character, scenario) + revealHint
+  const system = assembleSystemPrompt(character, scenario, lang) + revealHint
   const messages = [{ role: 'system', content: system }]
 
   for (const entry of dialogueHistory) {
@@ -130,17 +127,7 @@ export function buildCharacterPrompt(character, scenario, dialogueHistory, userI
 
 // ─── closing prompt ───────────────────────────────────────────────────────────
 
-/**
- * Build the messages array for the final NPC closing line.
- * No suggestedReplies — the player does not respond to this.
- *
- * @param {object} character       - full character JSON
- * @param {object} scenario        - full scenario JSON
- * @param {Array}  dialogueHistory - full conversation so far
- * @param {'positive'|'negative'|'neutral'} outcome
- * @returns {{ role, content }[]}
- */
-export function buildClosingPrompt(character, scenario, dialogueHistory, outcome) {
+export function buildClosingPrompt(character, scenario, dialogueHistory, outcome, lang = 'en') {
   const outcomeHint =
     outcome === 'positive'
       ? 'The conversation ended on a warm note — the player connected with you.'
@@ -148,7 +135,7 @@ export function buildClosingPrompt(character, scenario, dialogueHistory, outcome
       ? 'The conversation ended poorly — you remain closed off or uncomfortable.'
       : "The conversation ended inconclusively — some tension remains but it wasn't hostile."
 
-  const system = `${assembleSystemPrompt(character, scenario)}
+  const system = `${assembleSystemPrompt(character, scenario, lang)}
 
 ## THIS IS THE FINAL LINE OF THE CONVERSATION
 ${outcomeHint}
@@ -175,25 +162,21 @@ No suggestedReplies. No moodShift. Only npcResponse.`
 
 // ─── on-demand suggestion prompt ─────────────────────────────────────────────
 
-/**
- * Build a messages array that asks the LLM for 2-3 player reply suggestions
- * based on the current conversation state, WITHOUT generating an NPC response.
- * Used by the "Need a suggestion?" help button in DialogueScreen.
- *
- * @param {object} character       - full character JSON
- * @param {object} scenario        - full scenario JSON
- * @param {Array}  dialogueHistory - conversation so far (including latest NPC line)
- * @returns {{ role, content }[]}
- */
-export function buildSuggestionOnlyPrompt(character, scenario, dialogueHistory) {
+export function buildSuggestionOnlyPrompt(character, scenario, dialogueHistory, lang = 'en') {
   const traits         = character.personalityTraits?.join(', ') ?? ''
   const warmerTriggers = (character.emotionalState?.triggers?.warmer ?? []).join(', ')
   const styles         = (scenario.suggestedReplyStyles ?? ['neutral', 'warm', 'direct']).join(', ')
+
+  const langNote = lang === 'zh'
+    ? 'IMPORTANT: All reply text MUST be written in Simplified Chinese (简体中文). Do not use English in any field.'
+    : 'All reply text must be in English.'
 
   const system = `You are a coaching assistant for a social skills game called Alien Friends.
 The player is in a conversation with ${character.name}, who has these traits: ${traits}.
 What makes ${character.name} open up: ${warmerTriggers}.
 The suggested reply styles for this scenario are: ${styles}.
+
+${langNote}
 
 Your job is to generate 2-3 short, natural reply options the player could say next.
 Each option should be realistic spoken language (not formal), and aim to make ${character.name} feel heard.
@@ -216,7 +199,6 @@ Respond with valid JSON only — no other text:
     })
   }
 
-  // Explicit trigger so the model knows it should reply as the coach, not the NPC
   messages.push({ role: 'user', content: 'Please suggest 2-3 replies I could say next.' })
 
   return messages
@@ -224,18 +206,7 @@ Respond with valid JSON only — no other text:
 
 // ─── epilogue prompt ──────────────────────────────────────────────────────────
 
-/**
- * Build the messages array for a second-person narrated epilogue.
- * NOT from the NPC's voice — an omniscient narrator reflecting on what
- * just happened and what it might mean for the player.
- *
- * @param {object} character       - full character JSON
- * @param {object} scenario        - full scenario JSON
- * @param {Array}  dialogueHistory - complete conversation
- * @param {'positive'|'neutral'|'negative'} outcome
- * @returns {{ role, content }[]}
- */
-export function buildEpiloguePrompt(character, scenario, dialogueHistory, outcome) {
+export function buildEpiloguePrompt(character, scenario, dialogueHistory, outcome, lang = 'en') {
   const outcomeGuide =
     outcome === 'positive'
       ? 'The connection genuinely improved. There was a moment of warmth or understanding. Reflect on what the player did well and what small shift happened.'
@@ -243,14 +214,25 @@ export function buildEpiloguePrompt(character, scenario, dialogueHistory, outcom
       ? 'The distance remained or widened. Things felt awkward or unresolved. Reflect honestly but gently — what made it hard, and what might be worth trying differently next time.'
       : 'The conversation was mixed — some connection, some friction, no clear breakthrough but no collapse either. Reflect on the tension between wanting to connect and not knowing how.'
 
+  // Resolve scenario title for the prompt (handles both string and {en,zh} shapes)
+  const scenarioTitle = typeof scenario.title === 'string'
+    ? scenario.title
+    : (scenario.title?.[lang] ?? scenario.title?.en ?? '')
+
+  const langNote = lang === 'zh'
+    ? `## Language\nWrite the epilogue in Simplified Chinese (简体中文). The tone should feel literary and emotionally resonant in Chinese — not a literal translation. Use natural Chinese narrative cadence.`
+    : `## Language\nWrite the epilogue in English.`
+
   const system = `You are a warm, literary narrator for a social skills game called Alien Friends.
 You are NOT the NPC. You are an observer writing a brief story epilogue after a conversation between the player and ${character.name}.
 
 ## The scenario
-${scenario.title}: ${scenario.setup}
+${scenarioTitle}: ${scenario.setup}
 
 ## Outcome
 ${outcomeGuide}
+
+${langNote}
 
 ## Your task
 Write a short epilogue (2–4 sentences, no more). Rules:

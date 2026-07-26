@@ -5,36 +5,49 @@
  *
  * All exported functions return a result object and never throw:
  *   { ok: true,  text: string }
- *   { ok: false, error: string }
+ *   { ok: false, error: string, timedOut?: true }
  */
 
 // In production you'd point this at your deployed API URL.
 const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3001'
+
+/** How long to wait before aborting a single attempt (ms). */
+const TIMEOUT_MS = 15_000
+
+/** How many total attempts before giving up (1 = no retry, 2 = one retry). */
+const MAX_ATTEMPTS = 2
 
 // ─── types (JSDoc only) ──────────────────────────────────────────────────────
 
 /**
  * @typedef {{ role: 'system'|'user'|'assistant', content: string }} Message
  * @typedef {{ ok: true,  text: string }} LLMSuccess
- * @typedef {{ ok: false, error: string }} LLMError
+ * @typedef {{ ok: false, error: string, timedOut?: true }} LLMError
  * @typedef {LLMSuccess | LLMError} LLMResult
  */
 
-// ─── core call ───────────────────────────────────────────────────────────────
+// ─── single attempt (with timeout) ───────────────────────────────────────────
 
 /**
- * Send a messages array to our Express proxy, which forwards to Hunyuan.
+ * One fetch attempt with a built-in AbortController timeout.
+ * Returns LLMResult — never throws.
  *
  * @param {Message[]} messages
  * @returns {Promise<LLMResult>}
  */
-export async function callLLM(messages) {
+async function attemptCall(messages) {
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
   try {
     const res = await fetch(`${API_BASE}/api/chat`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ messages }),
+      signal: controller.signal,
     })
+
+    clearTimeout(timer)
 
     // The server always returns JSON with { ok, text } or { ok, error }
     const data = await res.json()
@@ -43,16 +56,56 @@ export async function callLLM(messages) {
       return {
         ok: false,
         error: data?.error ?? `Server responded with HTTP ${res.status}`,
+        // treat 5xx as retryable
+        _retryable: res.status >= 500,
       }
     }
 
     return { ok: true, text: data.text }
   } catch (err) {
+    clearTimeout(timer)
+
+    const isAbort = err?.name === 'AbortError'
     return {
       ok: false,
-      error: `Network error: ${err?.message ?? String(err)}`,
+      error: isAbort
+        ? `Request timed out after ${TIMEOUT_MS / 1000} seconds.`
+        : `Network error: ${err?.message ?? String(err)}`,
+      timedOut: isAbort,
+      _retryable: true,  // network errors and timeouts are worth retrying
     }
   }
+}
+
+// ─── core call (with retry) ───────────────────────────────────────────────────
+
+/**
+ * Send a messages array to our Express proxy, which forwards to the LLM.
+ * Automatically retries once on transient network errors, timeouts, or 5xx.
+ *
+ * @param {Message[]} messages
+ * @returns {Promise<LLMResult>}
+ */
+export async function callLLM(messages) {
+  let lastResult
+
+  for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    lastResult = await attemptCall(messages)
+
+    if (lastResult.ok) return lastResult
+
+    // Only retry on transient failures
+    if (!lastResult._retryable) break
+
+    // Small back-off before the retry
+    if (attempt < MAX_ATTEMPTS) {
+      await new Promise(r => setTimeout(r, 800))
+    }
+  }
+
+  // Strip internal _retryable flag before returning
+  const { _retryable: _, ...clean } = lastResult
+  return clean
 }
 
 // ─── convenience helper ──────────────────────────────────────────────────────

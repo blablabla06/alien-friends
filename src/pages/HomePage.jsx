@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
+import { useLang } from '../context/LanguageContext.jsx'
 import LevelBadge from '../components/LevelBadge.jsx'
 import StreakTracker from '../components/StreakTracker.jsx'
 import DailyMissionCard from '../components/DailyMissionCard.jsx'
@@ -7,6 +8,7 @@ import DailyMissionCard from '../components/DailyMissionCard.jsx'
 export default function HomePage() {
   const navigate = useNavigate()
   const { state } = useGameState()
+  const { lang, setLang, t } = useLang()
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center px-4 py-10 gap-8">
@@ -15,9 +17,30 @@ export default function HomePage() {
           Alien Friends
         </h1>
         <p className="text-lg text-warm-white opacity-70">
-          Practice conversations that matter.
+          {t('home.tagline')}
         </p>
       </header>
+
+      {/* Language toggle */}
+      <div
+        className="flex items-center gap-1 rounded-full px-1 py-1"
+        style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
+      >
+        {['en', 'zh'].map((l) => (
+          <button
+            key={l}
+            onClick={() => setLang(l)}
+            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+            style={
+              lang === l
+                ? { backgroundColor: '#4ECDC4', color: '#1A1B3A' }
+                : { color: '#F5F0E8', opacity: 0.5 }
+            }
+          >
+            {l === 'en' ? 'EN' : '中文'}
+          </button>
+        ))}
+      </div>
 
       <div className="flex gap-6 items-center">
         <LevelBadge level={state.level} xp={state.xp} />
@@ -31,14 +54,14 @@ export default function HomePage() {
         className="px-10 py-4 rounded-2xl text-xl font-bold font-display transition-transform hover:scale-105 active:scale-95"
         style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
       >
-        Start Talking
+        {t('home.startTalking')}
       </button>
 
       <button
         onClick={() => navigate('/growth')}
         className="text-sm underline text-teal-chrome opacity-80 hover:opacity-100"
       >
-        View Growth Report
+        {t('home.viewGrowthReport')}
       </button>
     </div>
   )

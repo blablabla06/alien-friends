@@ -66,6 +66,7 @@ app.post('/api/chat', async (req, res) => {
       model: MODEL,
       messages,
       temperature: 0.8,
+      timeout: 14_000,   // 14 s — just under the browser-side 15 s AbortController
     })
 
     const text = response.choices?.[0]?.message?.content

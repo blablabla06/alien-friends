@@ -1,13 +1,19 @@
 {
   "id": "office-coworker",
-  "title": "Office Small Talk",
+  "title": { "en": "Office Small Talk", "zh": "办公室寒暄" },
   "category": "coworker",
   "difficultyTier": "easy",
   "npcRef": "coworker-jamie",
   "locationRef": "Open-plan office, Monday morning. Keyboards clicking, coffee machine hissing in the background.",
   "setup": "You pass Jamie's desk on the way to your own. She looks up from her screen.",
-  "storyPlot": "You and Jamie have worked in the same open-plan office for almost a year. You know each other the way you know most colleagues — by name, by desk location, by the occasional 'morning' in the kitchen. You've never had a real conversation, exactly, but you've shared enough small moments — the broken printer, the Friday afternoon lull — that it doesn't feel like starting from zero. It's a Monday, early enough that the day hasn't fully started yet, and Jamie's already at her screen. A passing word could stay a passing word. Or it could be the beginning of something a little more human.",
-  "openingLine": "Jamie glances up. 'Morning.' She holds eye contact just long enough to be polite, then looks back at her screen.",
+  "storyPlot": {
+    "en": "You and Jamie have worked in the same open-plan office for almost a year. You know each other the way you know most colleagues — by name, by desk location, by the occasional 'morning' in the kitchen. You've never had a real conversation, exactly, but you've shared enough small moments — the broken printer, the Friday afternoon lull — that it doesn't feel like starting from zero. It's a Monday, early enough that the day hasn't fully started yet, and Jamie's already at her screen. A passing word could stay a passing word. Or it could be the beginning of something a little more human.",
+    "zh": "你和杰米在同一个开放式办公室工作了将近一年。你们之间的熟悉程度就像大多数同事一样——叫得出名字，知道工位在哪，在茶水间偶尔道一声「早」。严格来说你们从未有过真正的对话，但共同经历过一些细碎的瞬间——坏掉的打印机，周五下午的慵懒时光——让这一切不像是从零开始。今天是周一，早得天还没完全醒，而杰米已经坐在屏幕前了。随口说的一句话可以只是一句话，也可以成为一段更有人情味的关系的起点。"
+  },
+  "openingLine": {
+    "en": "Jamie glances up. 'Morning.' She holds eye contact just long enough to be polite, then looks back at her screen.",
+    "zh": "杰米抬起头瞥了一眼。「早。」她的目光停留了刚好够礼貌的一秒，然后又回到了屏幕上。"
+  },
   "successCondition": "Composite score ≥ 65 and at least one reveal condition met",
   "failureCondition": "Composite score < 35 OR Jamie explicitly returns to work twice",
   "scoringFocus": ["clarity", "politeness"],

@@ -23,7 +23,7 @@ export default function SuggestedReplyOptions({ suggestions, onSelect, disabled 
         return (
           <button
             key={i}
-            onClick={() => !disabled && onSelect(s.text)}
+            onClick={() => !disabled && onSelect(s.text, true)}
             disabled={disabled}
             className="w-full text-left px-4 py-2.5 rounded-xl text-sm transition-all disabled:opacity-40 hover:brightness-110"
             style={{
