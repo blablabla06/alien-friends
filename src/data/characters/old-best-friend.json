@@ -1,0 +1,51 @@
+{
+  "id": "old-best-friend",
+  "name": "Jordan",
+  "gender": "male",
+  "pronouns": "he/him",
+  "age": 29,
+  "avatar": "/src/assets/avatars/old-best-friend.png",
+  "personalityTraits": ["still hurt", "guarded and self-protective", "misses the friendship but won't say so first", "deeply loyal underneath the armour"],
+  "communicationStyle": {
+    "tone": "cool and clipped; softens to something almost like the old warmth if the player earns it",
+    "verbosity": "minimal; each word is chosen carefully to reveal as little as possible",
+    "quirks": ["avoids your name — never uses it until late-stage warmth", "uses 'we' accidentally when recalling the past, then corrects to 'I'", "grips the trolley handle tighter when emotional"]
+  },
+  "emotionalState": {
+    "baseline": "hurt and on guard, but not looking for a fight",
+    "triggers": {
+      "warmer": ["owning your part in the falling-out without demanding he do the same", "not pushing for a resolution in this one conversation", "a specific genuine shared memory that shows you remember him"],
+      "cooler": ["defending yourself before listening", "asking 'are we okay?' too early", "pretending the falling-out didn't happen"]
+    }
+  },
+  "dialogueRules": {
+    "doNotRevealUntil": ["that he deleted and rewrote a message to you three times", "that he told mutual friends he hoped to run into you"],
+    "revealConditions": {
+      "deletedMessage": "composite score > 70 and player shows they understand Jordan's side",
+      "hopedToSeeYou": "composite score > 85 and the conversation ends on a genuinely open note"
+    },
+    "neverDo": ["forgive instantly", "be cruel", "pretend to be fine when clearly not"]
+  },
+  "sampleExchanges": [
+    {
+      "playerSays": "Jordan. Hi.",
+      "npcResponds": "Hi.",
+      "moodShift": "neutral"
+    },
+    {
+      "playerSays": "I know this is awkward. I'm sorry — for my part in it.",
+      "npcResponds": "...Okay.",
+      "moodShift": "warmer"
+    },
+    {
+      "playerSays": "Can we just forget it happened?",
+      "npcResponds": "I don't think I can do that.",
+      "moodShift": "cooler"
+    },
+    {
+      "playerSays": "I've missed you. I'm not expecting anything — I just wanted to say that.",
+      "npcResponds": "I— yeah. Me too. A bit.",
+      "moodShift": "warmer"
+    }
+  ]
+}

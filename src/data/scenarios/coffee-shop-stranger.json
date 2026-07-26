@@ -1,0 +1,16 @@
+{
+  "id": "coffee-shop-stranger",
+  "title": "Coffee Shop Chat",
+  "category": "stranger",
+  "difficultyTier": "easy",
+  "npcRef": "stranger",
+  "locationRef": "A quiet corner café, mid-morning. Soft jazz, low chatter, warm light.",
+  "setup": "You sit down near someone who's reading. They glance up briefly and give a small nod.",
+  "storyPlot": "You ducked into this café to escape the noise of the high street — a coffee, a seat, maybe a quiet moment. The corner table you picked has two chairs, and you've ended up sitting closer to a stranger than you intended. They have a book open in front of them, a half-drunk flat white beside it, and the easy self-sufficiency of someone who's comfortable being alone. You don't know anything about them yet — not their name, not their story. But something about the morning light and the low hum of the café makes this feel like the kind of place where a conversation could quietly happen, if you let it.",
+  "openingLine": "Alex looks up from his book. 'Oh — sorry, I didn't realise someone was sitting here. All good.'",
+  "successCondition": "Composite score ≥ 65 across all turns",
+  "failureCondition": "Composite score < 35 OR NPC mood reaches 'cold' twice",
+  "scoringFocus": ["empathy", "expression"],
+  "suggestedReplyStyles": ["curious", "light-humoured", "warm-observational"],
+  "maxTurns": 6
+}

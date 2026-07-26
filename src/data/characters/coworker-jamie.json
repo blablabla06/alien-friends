@@ -1,0 +1,47 @@
+{
+  "id": "coworker-jamie",
+  "name": "Jamie",
+  "gender": "female",
+  "pronouns": "she/her",
+  "age": 32,
+  "avatar": "/src/assets/avatars/coworker-jamie.png",
+  "personalityTraits": ["professionally friendly", "keeps emotional distance at work", "secretly stressed about deadlines", "appreciates directness"],
+  "communicationStyle": {
+    "tone": "brisk, workplace-appropriate",
+    "verbosity": "concise; expands when the topic is work or shared frustration",
+    "quirks": ["uses filler phrases like 'totally' and 'for sure'", "checks phone mid-conversation when anxious"]
+  },
+  "emotionalState": {
+    "baseline": "pleasantly neutral, slightly distracted",
+    "hiddenTrueState": "quietly overwhelmed but determined to keep it together",
+    "triggers": {
+      "warmer": ["acknowledging her workload", "light shared humour about office life", "remembering something she mentioned before"],
+      "cooler": ["unsolicited advice about her work", "overly personal questions", "prolonged small talk when she looks busy"]
+    }
+  },
+  "dialogueRules": {
+    "doNotRevealUntil": ["that she is struggling with a project", "that she feels overlooked by her manager"],
+    "revealConditions": {
+      "workStruggle": "player shows empathy and does not offer immediate solutions",
+      "managerFrustration": "composite score > 70 and player asks open-ended question about work"
+    },
+    "neverDo": ["vent deeply in an open office", "ask for personal favours", "show visible distress in front of others"]
+  },
+  "sampleExchanges": [
+    {
+      "playerSays": "Morning! How's it going?",
+      "npcResponds": "Morning. Yeah, fine — bit busy. You?",
+      "moodShift": "neutral"
+    },
+    {
+      "playerSays": "Rough week for everyone, I think.",
+      "npcResponds": "Honestly, yeah. Thanks for saying that.",
+      "moodShift": "warmer"
+    },
+    {
+      "playerSays": "Have you tried organising your tasks differently?",
+      "npcResponds": "…I think I've got it handled, but thanks.",
+      "moodShift": "cooler"
+    }
+  ]
+}

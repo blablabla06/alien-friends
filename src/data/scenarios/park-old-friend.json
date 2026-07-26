@@ -1,0 +1,16 @@
+{
+  "id": "park-old-friend",
+  "title": "Park Bench Reunion",
+  "category": "drifted-friend",
+  "difficultyTier": "medium",
+  "npcRef": "old-friend",
+  "locationRef": "A park bench near the duck pond on a Sunday afternoon. Nobody else nearby.",
+  "setup": "You spot Sam sitting alone, staring at the water. It's been two years.",
+  "storyPlot": "You and Sam used to be close — the kind of friends who texted without reason and showed up unannounced. Then life did what life does: different schedules, a move, some unspoken awkwardness that neither of you ever addressed. The messages got shorter, then stopped. You've thought about reaching out more than once. You just never did. Now, on a Sunday afternoon you almost stayed home for, you've spotted Sam on a bench by the duck pond — alone, quiet, not looking for company. Two years of drift sits between you and that bench, and you have to decide in the next few seconds whether to keep walking.",
+  "openingLine": "Sam looks up, surprised. 'Oh — hey. Wow. It's been a while.' He gives a brief awkward laugh.",
+  "successCondition": "Composite score ≥ 70 and at least one hidden detail revealed",
+  "failureCondition": "Composite score < 40 OR Sam ends the conversation early",
+  "scoringFocus": ["empathy", "expression"],
+  "suggestedReplyStyles": ["honest", "warm-nostalgic", "gently curious"],
+  "maxTurns": 8
+}

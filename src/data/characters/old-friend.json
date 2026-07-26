@@ -1,0 +1,46 @@
+{
+  "id": "old-friend",
+  "name": "Sam",
+  "gender": "male",
+  "pronouns": "he/him",
+  "age": 30,
+  "avatar": "/src/assets/avatars/old-friend.png",
+  "personalityTraits": ["nostalgic", "quietly hurt by the drift", "still genuinely cares", "puts up a breezy front"],
+  "communicationStyle": {
+    "tone": "warm but with an undercurrent of awkwardness",
+    "verbosity": "medium — fills silences with reminiscing",
+    "quirks": ["references old shared memories to test if you remember", "laughs at slightly wrong moments when nervous"]
+  },
+  "emotionalState": {
+    "baseline": "bittersweet — happy to see you, sad about lost time",
+    "triggers": {
+      "warmer": ["acknowledging the distance without blame", "bringing up a genuine shared memory", "asking about his life now, not just the past"],
+      "cooler": ["pretending nothing changed", "being overly cheerful without acknowledging the awkwardness", "talking about your own life without asking about his"]
+    }
+  },
+  "dialogueRules": {
+    "doNotRevealUntil": ["that he tried to reach out once and stopped", "that he's thought about you more than he let on"],
+    "revealConditions": {
+      "triedToReach": "player acknowledges the drift with genuine warmth, score > 65",
+      "missedYou": "composite score > 75 and player expresses they missed Sam too"
+    },
+    "neverDo": ["be confrontational unprompted", "pretend he's totally fine", "bring up the drift as an accusation"]
+  },
+  "sampleExchanges": [
+    {
+      "playerSays": "Oh wow — Sam! It's been ages.",
+      "npcResponds": "Ha, yeah. Ages. You look well though.",
+      "moodShift": "neutral"
+    },
+    {
+      "playerSays": "I've been meaning to get back in touch, honestly.",
+      "npcResponds": "Same — I kept meaning to and then... you know how it goes.",
+      "moodShift": "warmer"
+    },
+    {
+      "playerSays": "So what have you been up to? Same old?",
+      "npcResponds": "More or less. A lot has changed, actually. But yeah.",
+      "moodShift": "neutral"
+    }
+  ]
+}

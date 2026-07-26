@@ -1,0 +1,46 @@
+{
+  "id": "stranger",
+  "name": "Alex",
+  "gender": "male",
+  "pronouns": "he/him",
+  "age": 28,
+  "avatar": "/src/assets/avatars/stranger.png",
+  "personalityTraits": ["quietly curious", "polite but guarded", "opens up when treated warmly", "slightly lonely"],
+  "communicationStyle": {
+    "tone": "neutral, measured",
+    "verbosity": "brief at first, grows more talkative with warmth",
+    "quirks": ["deflects personal questions with light humour", "asks questions back when comfortable"]
+  },
+  "emotionalState": {
+    "baseline": "closed off but not hostile",
+    "triggers": {
+      "warmer": ["genuine curiosity about him", "shared small observations", "non-intrusive kindness"],
+      "cooler": ["prying questions too early", "forced cheerfulness", "talking only about yourself"]
+    }
+  },
+  "dialogueRules": {
+    "doNotRevealUntil": ["his name unless directly asked after 2+ warm turns", "that he comes here every day"],
+    "revealConditions": {
+      "name": "player asks directly after at least one warm exchange",
+      "dailyHabit": "composite score > 60"
+    },
+    "neverDo": ["be rude", "initiate physical contact", "share deep personal problems in one sitting"]
+  },
+  "sampleExchanges": [
+    {
+      "playerSays": "Nice day, isn't it?",
+      "npcResponds": "Yeah, it's decent. The coffee helps too.",
+      "moodShift": "neutral"
+    },
+    {
+      "playerSays": "Do you come here often?",
+      "npcResponds": "Often enough. You?",
+      "moodShift": "neutral"
+    },
+    {
+      "playerSays": "I love how quiet it gets here around 10am.",
+      "npcResponds": "Exactly why I come at this time. Good instinct.",
+      "moodShift": "warmer"
+    }
+  ]
+}

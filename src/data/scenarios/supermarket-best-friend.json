@@ -1,0 +1,16 @@
+{
+  "id": "supermarket-best-friend",
+  "title": "Supermarket Run-In",
+  "category": "falling-out",
+  "difficultyTier": "hard",
+  "npcRef": "old-best-friend",
+  "locationRef": "Supermarket cereal aisle, Saturday afternoon. Trolleys, tinny overhead music, no privacy.",
+  "setup": "You haven't spoken to Jordan in two years after a serious falling-out. Neither of you expected this.",
+  "storyPlot": "Jordan used to be your closest friend — the person you called first, the person who knew things about you that no one else did. Then something happened between you. Not one thing, exactly, but a sequence of things that accumulated until one conversation went badly wrong, and after that, silence. You've replayed it enough times to have lost track of whose fault it actually was. You've gone two years without contact: no texts, no overlapping social plans, nothing. You came to the supermarket today for milk and bread. You turned into the cereal aisle and there he was — Jordan, trolley in hand, close enough that neither of you can pretend not to have seen the other.",
+  "openingLine": "Jordan freezes when he sees you. A long beat of silence. He grips the trolley. 'Oh. Hi.'",
+  "successCondition": "Composite score ≥ 75 and at least one hidden layer revealed",
+  "failureCondition": "Composite score < 40 OR Jordan says goodbye and walks away before maxTurns",
+  "scoringFocus": ["empathy", "clarity", "expression", "politeness"],
+  "suggestedReplyStyles": ["accountable", "open-hearted", "patient"],
+  "maxTurns": 10
+}

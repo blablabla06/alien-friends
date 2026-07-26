@@ -1,0 +1,16 @@
+{
+  "id": "office-conflict",
+  "title": "Coworker Conflict",
+  "category": "coworker-conflict",
+  "difficultyTier": "medium",
+  "npcRef": "coworker-morgan",
+  "locationRef": "A small glass-walled meeting room. You've both been asked to resolve a project disagreement.",
+  "setup": "Morgan sits across from you with crossed arms. There's unresolved tension after last month's miscommunication.",
+  "storyPlot": "Last month, something went wrong on the Henderson project — deadlines were missed, blame got passed around, and you and Morgan ended up on opposite sides of a very tense email chain. You're not sure who was more at fault. Your manager has now put you both in a meeting room together with one instruction: sort it out. Morgan got here first and chose the seat that faces the door. The room is small and glass-walled, visible to the rest of the office. Whatever happens in the next few minutes, everyone will be able to see — if not hear — how it goes.",
+  "openingLine": "Morgan glances at the door, then back at you. 'So. Are we going to talk about what happened, or are we pretending it's fine?'",
+  "successCondition": "Composite score ≥ 70 and de-escalation acknowledged in dialogue",
+  "failureCondition": "Composite score < 40 OR mood cools three turns in a row",
+  "scoringFocus": ["clarity", "empathy", "politeness"],
+  "suggestedReplyStyles": ["accountable", "de-escalating", "direct-but-calm"],
+  "maxTurns": 8
+}

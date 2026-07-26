@@ -1,0 +1,16 @@
+{
+  "id": "office-coworker",
+  "title": "Office Small Talk",
+  "category": "coworker",
+  "difficultyTier": "easy",
+  "npcRef": "coworker-jamie",
+  "locationRef": "Open-plan office, Monday morning. Keyboards clicking, coffee machine hissing in the background.",
+  "setup": "You pass Jamie's desk on the way to your own. She looks up from her screen.",
+  "storyPlot": "You and Jamie have worked in the same open-plan office for almost a year. You know each other the way you know most colleagues — by name, by desk location, by the occasional 'morning' in the kitchen. You've never had a real conversation, exactly, but you've shared enough small moments — the broken printer, the Friday afternoon lull — that it doesn't feel like starting from zero. It's a Monday, early enough that the day hasn't fully started yet, and Jamie's already at her screen. A passing word could stay a passing word. Or it could be the beginning of something a little more human.",
+  "openingLine": "Jamie glances up. 'Morning.' She holds eye contact just long enough to be polite, then looks back at her screen.",
+  "successCondition": "Composite score ≥ 65 and at least one reveal condition met",
+  "failureCondition": "Composite score < 35 OR Jamie explicitly returns to work twice",
+  "scoringFocus": ["clarity", "politeness"],
+  "suggestedReplyStyles": ["casual-friendly", "empathetic", "direct"],
+  "maxTurns": 6
+}

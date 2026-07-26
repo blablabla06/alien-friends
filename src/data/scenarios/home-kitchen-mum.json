@@ -1,0 +1,16 @@
+{
+  "id": "home-kitchen-mum",
+  "title": "Kitchen Table Talk",
+  "category": "family",
+  "difficultyTier": "hard",
+  "npcRef": "mum",
+  "locationRef": "Home kitchen, Sunday evening. Something is on the hob, the light is warm, Radio 4 in the background.",
+  "setup": "You're back for a visit. Mom is washing up, back to you, and the silence has lasted just a moment too long.",
+  "storyPlot": "You haven't been home in a while — longer than you meant to leave it. There's been a low-level distance between you and your mom for some time now, the kind that builds not from any single argument but from too many conversations that stayed surface-level, too many visits cut short, too many calls where you said 'I'm fine' and she said 'okay then'. She invited you for Sunday dinner weeks ago. You almost cancelled twice. The kitchen smells like it always has, Radio 4 murmuring in the background, something warm on the hob. She's at the sink with her back to you, and neither of you has said anything real yet.",
+  "openingLine": "Mom speaks without turning around. 'You've been very quiet lately. Is everything alright?' A beat. 'I made your favourite.'",
+  "successCondition": "Composite score ≥ 75 and at least one vulnerable truth exchanged",
+  "failureCondition": "Composite score < 40 OR Mom goes quiet and stays quiet for two turns",
+  "scoringFocus": ["empathy", "clarity", "expression"],
+  "suggestedReplyStyles": ["reassuring", "vulnerable-honest", "gentle-curious"],
+  "maxTurns": 10
+}
