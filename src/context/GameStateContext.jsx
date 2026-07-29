@@ -219,6 +219,13 @@ function reducer(state, action) {
       return { ...state, sessionLog: updated }
     }
 
+    // Directly insert a pre-built SessionSummary (e.g. from AlienMainPage's
+    // story mode which manages its own scoring outside the standard flow).
+    case 'SAVE_ALIEN_SESSION': {
+      const updated = [action.summary, ...state.sessionLog].slice(0, 20)
+      return { ...state, sessionLog: updated }
+    }
+
     default:
       return state
   }
@@ -260,6 +267,7 @@ export function GameStateProvider({ children }) {
     addScoreEntry:      (entry)  => dispatch({ type: 'ADD_SCORE_ENTRY', entry }),
     updateScores:       (scores) => dispatch({ type: 'UPDATE_SCORES', scores }), // legacy alias
     saveSession:        ()       => dispatch({ type: 'SAVE_SESSION' }),
+    saveAlienSession:   (summary) => dispatch({ type: 'SAVE_ALIEN_SESSION', summary }),
     tickMissions:       (event)  => dispatch({ type: 'TICK_MISSIONS', event }),
     completeMission:    (missionId) => dispatch({ type: 'COMPLETE_MISSION', missionId }),
     setMood:            (mood)   => dispatch({ type: 'SET_MOOD', mood }),

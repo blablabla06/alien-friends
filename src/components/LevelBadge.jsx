@@ -12,7 +12,7 @@ export default function LevelBadge({ level = 1, xp = 0 }) {
           <circle cx="22" cy="22" r="18" fill="none" stroke="rgba(255,255,255,0.1)" strokeWidth="4" />
           <circle
             cx="22" cy="22" r="18"
-            fill="none" stroke="#FF8B5E" strokeWidth="4"
+            fill="none" stroke="#D4A574" strokeWidth="4"
             strokeDasharray={circumference}
             strokeDashoffset={offset}
             strokeLinecap="round"

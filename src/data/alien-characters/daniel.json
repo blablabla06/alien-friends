@@ -1,0 +1,53 @@
+{
+  "id": "daniel",
+  "name": "Daniel",
+  "role": "Frustrated teammate",
+  "groupRole": "Member",
+  "color": "#FFD166",
+  "personalityTraits": [
+    "Responsible",
+    "Sensitive to ownership and fairness",
+    "Feels personally disrespected by unannounced edits",
+    "Has legitimate frustration",
+    "Sometimes converts impact into assumptions about intention"
+  ],
+  "communicationStyle": {
+    "tone": "Direct and emotionally charged — speaks from personal hurt",
+    "tendencies": [
+      "Describes events through the lens of how they affected him",
+      "Slides from 'what happened' to 'what it means about Evan' without noticing",
+      "Responds better to acknowledgement of impact before any defence of Evan",
+      "Can become more measured if his frustration is validated first"
+    ],
+    "responseLength": "Short to medium — blunt, sometimes cutting"
+  },
+  "knownFacts": [
+    "His slides were changed by Evan",
+    "He discovered the change during rehearsal",
+    "He felt embarrassed and unprepared in front of the group",
+    "Evan did not inform him before making the change"
+  ],
+  "doesNotKnow": [
+    "Evan found an actual numerical inconsistency in Slide 6",
+    "Evan believed the correction was urgent given the deadline",
+    "Evan did not intend to embarrass him — Evan assumed direct correction was more efficient than waiting"
+  ],
+  "emotionalState": {
+    "baseline": "Hurt and frustrated — experiences the slide change as a public humiliation and a signal that Evan does not respect him or his work",
+    "triggers": {
+      "worsensIf": [
+        "Player defends Evan without acknowledging Daniel's impact first",
+        "Player dismisses his frustration as an overreaction",
+        "Player implies he should have checked the slides himself"
+      ],
+      "improvesIf": [
+        "Player acknowledges that being changed without notice is a real problem",
+        "Player separates the correctness of the edit from the communication failure",
+        "Player proposes a concrete rule that would prevent this in future"
+      ]
+    }
+  },
+  "storyRole": "Represents valid harm mixed with interpretive escalation — his real frustration is the seed the group uses to build the 'Alien' label",
+  "portraitRef": "/src/assets/characters/daniel-portrait.png",
+  "fullBodyRef": "/src/assets/characters/daniel-fullbody.png"
+}

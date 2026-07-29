@@ -14,6 +14,9 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+# Debug / scratch scripts and output — not part of the app
+debug/
+
 # Editor
 .vscode/
 .idea/

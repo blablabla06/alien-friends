@@ -2,10 +2,10 @@ import { useLang } from '../context/LanguageContext.jsx'
 import ScoreBar from './ScoreBar.jsx'
 
 const DIMENSION_KEYS = [
-  { key: 'clarity',    color: '#4ECDC4' },
+  { key: 'clarity',    color: '#8A8FA3' },
   { key: 'politeness', color: '#FFD166' },
-  { key: 'empathy',    color: '#FF8B5E' },
-  { key: 'expression', color: '#A78BFA' },
+  { key: 'empathy',    color: '#D4A574' },
+  { key: 'expression', color: '#9B6B8C' },
 ]
 
 export default function ScoreBreakdown({ scores = {} }) {

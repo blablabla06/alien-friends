@@ -1,8 +1,8 @@
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang } from '../context/LanguageContext.jsx'
 
-const TEAL  = '#4ECDC4'
-const CORAL = '#FF8B5E'
+const TEAL  = '#8A8FA3'
+const CORAL = '#D98E5F'
 
 export default function DailyMissionCard() {
   const { state } = useGameState()
@@ -23,8 +23,8 @@ export default function DailyMissionCard() {
     <div
       className="w-full max-w-sm rounded-2xl px-5 py-4 flex flex-col gap-3"
       style={{
-        backgroundColor: 'rgba(78,205,196,0.07)',
-        border: `1px solid ${allDone ? 'rgba(255,139,94,0.40)' : 'rgba(78,205,196,0.22)'}`,
+        backgroundColor: 'rgba(138,143,163,0.07)',
+        border: `1px solid ${allDone ? 'rgba(217,142,95,0.40)' : 'rgba(138,143,163,0.22)'}`,
         transition: 'border-color 0.3s',
       }}
     >
@@ -39,7 +39,7 @@ export default function DailyMissionCard() {
 
         <div
           className="flex items-center gap-1.5 px-2.5 py-1 rounded-full"
-          style={{ backgroundColor: allDone ? 'rgba(255,139,94,0.15)' : 'rgba(78,205,196,0.12)' }}
+          style={{ backgroundColor: allDone ? 'rgba(217,142,95,0.15)' : 'rgba(138,143,163,0.12)' }}
         >
           <span className="text-xs font-bold" style={{ color: allDone ? CORAL : TEAL }}>
             {completedCount}/{total}
@@ -76,13 +76,13 @@ export default function DailyMissionCard() {
                   width: 16,
                   height: 16,
                   backgroundColor: completed ? TEAL : 'transparent',
-                  border: `1.5px solid ${completed ? TEAL : 'rgba(78,205,196,0.35)'}`,
+                  border: `1.5px solid ${completed ? TEAL : 'rgba(138,143,163,0.35)'}`,
                   transition: 'background-color 0.25s, border-color 0.25s',
                 }}
               >
                 {completed && (
                   <svg width="9" height="7" viewBox="0 0 9 7" fill="none">
-                    <path d="M1 3.5L3.5 6L8 1" stroke="#1A1B3A" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+                    <path d="M1 3.5L3.5 6L8 1" stroke="#1A1D29" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
                   </svg>
                 )}
               </div>
@@ -92,7 +92,7 @@ export default function DailyMissionCard() {
                 <span
                   className="text-sm leading-snug"
                   style={{
-                    color: '#F5F0E8',
+                    color: '#EDEBE4',
                     opacity: completed ? 0.4 : 0.85,
                     textDecoration: completed ? 'line-through' : 'none',
                     transition: 'opacity 0.25s',
@@ -102,7 +102,7 @@ export default function DailyMissionCard() {
                 </span>
                 <span
                   className="text-[10px] font-semibold flex-shrink-0 mt-0.5"
-                  style={{ color: completed ? 'rgba(255,139,94,0.5)' : 'rgba(255,139,94,0.8)' }}
+                  style={{ color: completed ? 'rgba(217,142,95,0.5)' : 'rgba(217,142,95,0.8)' }}
                 >
                   +{def.xpReward}
                 </span>

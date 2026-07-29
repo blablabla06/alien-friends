@@ -5,13 +5,14 @@
   "difficultyTier": "hard",
   "npcRef": "mum",
   "locationRef": "Home kitchen, Sunday evening. Something is on the hob, the light is warm, Radio 4 in the background.",
+  "backgroundImage": "/assets/backgrounds/home-kitchen.png",
   "setup": "You're back for a visit. Mom is washing up, back to you, and the silence has lasted just a moment too long.",
   "storyPlot": {
     "en": "You haven't been home in a while — longer than you meant to leave it. There's been a low-level distance between you and your mom for some time now, the kind that builds not from any single argument but from too many conversations that stayed surface-level, too many visits cut short, too many calls where you said 'I'm fine' and she said 'okay then'. She invited you for Sunday dinner weeks ago. You almost cancelled twice. The kitchen smells like it always has, Radio 4 murmuring in the background, something warm on the hob. She's at the sink with her back to you, and neither of you has said anything real yet.",
     "zh": "你已经很久没回家了——比你本来计划的时间长了许多。你和妈妈之间有一种持续已久的疏远，不是哪一场争吵造成的，而是太多次停在表面的对话、太多次匆匆结束的探望、太多次你说「我挺好的」而她回了一句「那就好」所积累起来的。几周前她邀请你来吃周日的晚饭。你差点取消了两次。厨房的味道和从前一模一样，收音机里传来低沉的人声，炉子上有什么东西正在温热。她背对着你站在水槽边，你们都还没有说出任何一句真心话。"
   },
   "openingLine": {
-    "en": "Mom speaks without turning around. 'You've been very quiet lately. Is everything alright?' A beat. 'I made your favourite.'",
+    "en": "Mom speaks without turning around. \"You've been very quiet lately. Is everything alright?\" A beat. \"I made your favourite.\"",
     "zh": "妈妈没有转身，开口说话。「你最近很沉默。一切都好吗？」停顿了一下。「我做了你最喜欢吃的。」"
   },
   "successCondition": "Composite score ≥ 75 and at least one vulnerable truth exchanged",

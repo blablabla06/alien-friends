@@ -4,10 +4,13 @@ export default {
   theme: {
     extend: {
       colors: {
-        'indigo-deep': '#1A1B3A',
-        coral:         '#FF8B5E',
-        'teal-chrome': '#4ECDC4',
-        'warm-white':  '#F5F0E8',
+        'indigo-deep': '#1A1D29',
+        coral:         '#D4A574',
+        warmth:        '#D98E5F',
+        distance:      '#8A8FA3',
+        tension:       '#9B6B8C',
+        'teal-chrome': '#8A8FA3',
+        'warm-white':  '#EDEBE4',
         amber:         '#FFD166',
       },
       fontFamily: {

@@ -5,10 +5,10 @@
 export default function MoodMeter({ mood = 50 }) {
   const clamped = Math.max(0, Math.min(100, mood))
 
-  // Interpolate colour from teal (cool) through amber to coral (warm)
-  const r = Math.round(78  + (255 - 78)  * (clamped / 100))
-  const g = Math.round(205 + (139 - 205) * (clamped / 100))
-  const b = Math.round(196 + (94  - 196) * (clamped / 100))
+  // Interpolate colour from distance/cool (#8A8FA3) through to warmth (#D98E5F)
+  const r = Math.round(138 + (217 - 138) * (clamped / 100))
+  const g = Math.round(143 + (142 - 143) * (clamped / 100))
+  const b = Math.round(163 + (95  - 163) * (clamped / 100))
   const indicatorColour = `rgb(${r},${g},${b})`
 
   return (
@@ -19,7 +19,7 @@ export default function MoodMeter({ mood = 50 }) {
       <div
         className="relative w-28 h-3 rounded-full overflow-visible"
         style={{
-          background: 'linear-gradient(to right, #4ECDC4, #FFD166, #FF8B5E)',
+          background: 'linear-gradient(to right, #8A8FA3, #FFD166, #D98E5F)',
         }}
       >
         {/* position dot */}
