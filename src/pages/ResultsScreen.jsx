@@ -87,7 +87,7 @@ export default function ResultsScreen() {
 
   function handlePlayAgain() {
     actions.endScenario()
-    navigate('/select')
+    navigate('/')
   }
 
   const missionXpTotal = newlyCompleted.reduce((s, d) => s + (d.xpReward ?? 0), 0)
@@ -105,7 +105,7 @@ export default function ResultsScreen() {
         <p className="text-sm text-warm-white opacity-50 text-center">{scenarioTitle}</p>
       )}
 
-      <ScoreBar label={t('results.connection')} value={connectionMood} color="#FF8B5E" />
+      <ScoreBar label={t('results.connection')} value={connectionMood} color="#D4A574" />
 
       <ScoreBreakdown scores={currentScores} />
 
@@ -121,19 +121,19 @@ export default function ResultsScreen() {
       {/* ── Daily mission completions ── */}
       {newlyCompleted.length > 0 && (
         <div className="w-full flex flex-col gap-2">
-          <p className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#FF8B5E', opacity: 0.7 }}>
+          <p className="text-xs font-semibold uppercase tracking-wide text-center" style={{ color: '#D4A574', opacity: 0.7 }}>
             {t('results.dailyTasksDone')}
           </p>
           {newlyCompleted.map(def => (
             <div
               key={def.id}
               className="rounded-xl px-4 py-3 flex items-center justify-between gap-3"
-              style={{ backgroundColor: 'rgba(255,139,94,0.10)', border: '1px solid rgba(255,139,94,0.25)' }}
+              style={{ backgroundColor: 'rgba(212,165,116,0.10)', border: '1px solid rgba(212,165,116,0.25)' }}
             >
               <div className="flex items-center gap-2">
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-                  <circle cx="7" cy="7" r="6.5" stroke="#FF8B5E" strokeOpacity="0.6" />
-                  <path d="M4 7.5L6.2 9.5L10 5" stroke="#FF8B5E" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+                  <circle cx="7" cy="7" r="6.5" stroke="#D4A574" strokeOpacity="0.6" />
+                  <path d="M4 7.5L6.2 9.5L10 5" stroke="#D4A574" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
                 <span className="text-sm text-warm-white opacity-80">
                   {t(`missions.${def.id}`) !== `missions.${def.id}` ? t(`missions.${def.id}`) : def.label}
@@ -154,14 +154,14 @@ export default function ResultsScreen() {
         <button
           onClick={() => navigate('/growth')}
           className="px-5 py-3 rounded-xl border text-sm text-teal-chrome"
-          style={{ borderColor: '#4ECDC4' }}
+          style={{ borderColor: '#8A8FA3' }}
         >
           {t('results.growthReport')}
         </button>
         <button
           onClick={handlePlayAgain}
           className="px-5 py-3 rounded-xl text-sm font-semibold"
-          style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
+          style={{ backgroundColor: '#D4A574', color: '#1A1D29' }}
         >
           {t('results.playAgain')}
         </button>

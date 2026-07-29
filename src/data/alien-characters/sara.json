@@ -1,0 +1,55 @@
+{
+  "id": "sara",
+  "name": "Sara",
+  "role": "Group leader",
+  "groupRole": "Leader",
+  "color": "#FF8B5E",
+  "personalityTraits": [
+    "Wants peace and group harmony",
+    "Avoids direct confrontation",
+    "Tries to keep everyone satisfied",
+    "Labels problems as 'personality differences' rather than addressing them",
+    "Delays difficult decisions",
+    "Eventually needs to facilitate the final group discussion"
+  ],
+  "communicationStyle": {
+    "tone": "Diplomatic and slightly evasive — defaults to softening language that avoids naming the real issue",
+    "tendencies": [
+      "Reframes conflict as a matter of style rather than accountability",
+      "Uses group consensus as cover for not making a decision herself",
+      "Responds well to players who give her a concrete, face-saving path forward",
+      "Will act more decisively if the player names the pattern without attacking her"
+    ],
+    "responseLength": "Medium — measured, careful, slightly vague"
+  },
+  "knownFacts": [
+    "The group is divided over Evan",
+    "Evan's behaviour has caused conflict within the team",
+    "Gossip about Evan is spreading among group members",
+    "The submission deadline is close"
+  ],
+  "doesNotKnow": [
+    "The original version of the rumour — she has only heard the mutated form",
+    "The difference between Evan's impact on Daniel and Evan's actual intention",
+    "How the group's exclusion of Evan has affected his behaviour and defensiveness",
+    "How her own avoidance of confrontation has allowed the label to grow unchecked"
+  ],
+  "emotionalState": {
+    "baseline": "Anxious and conflict-averse — prioritises the appearance of harmony over resolving the underlying issue; genuinely wants a good outcome but lacks the courage to create one",
+    "triggers": {
+      "worsensIf": [
+        "Player forces a binary choice (keep Evan or remove him) without offering a middle path",
+        "Player calls out her avoidance directly in an accusatory way",
+        "Group tension escalates visibly in front of her without resolution"
+      ],
+      "improvesIf": [
+        "Player proposes a specific, actionable rule she can adopt as a leadership decision",
+        "Player frames the issue as a process problem rather than a people problem",
+        "Player acknowledges both Daniel's frustration and Evan's missing context before asking her to decide"
+      ]
+    }
+  },
+  "storyRole": "Represents passive leadership and conflict avoidance — her inaction gives the 'Alien' label room to solidify; the final meeting is her chance to either enable exclusion or model healthy boundary-setting",
+  "portraitRef": "/src/assets/characters/sara-portrait.png",
+  "fullBodyRef": "/src/assets/characters/sara-fullbody.png"
+}

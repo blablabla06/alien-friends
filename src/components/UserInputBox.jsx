@@ -26,7 +26,7 @@ export default function UserInputBox({ value, onChange, onSend, disabled }) {
         onClick={() => { if (!disabled && value.trim()) onSend(value) }}
         disabled={disabled || !value.trim()}
         className="px-4 py-3 rounded-xl font-semibold text-sm disabled:opacity-40 transition-opacity flex-shrink-0"
-        style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
+        style={{ backgroundColor: '#D4A574', color: '#1A1B3A' }}
       >
         Send
       </button>

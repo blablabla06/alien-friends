@@ -32,12 +32,17 @@ const MAX_ATTEMPTS = 2
  * One fetch attempt with a built-in AbortController timeout.
  * Returns LLMResult — never throws.
  *
- * @param {Message[]} messages
+ * @param {Message[]}    messages
+ * @param {AbortSignal}  [outerSignal] - optional caller-supplied signal; if it
+ *   fires before the internal timeout, the fetch is cancelled immediately.
  * @returns {Promise<LLMResult>}
  */
-async function attemptCall(messages) {
+async function attemptCall(messages, outerSignal) {
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), TIMEOUT_MS)
+
+  // If the caller aborts externally, propagate into our internal controller.
+  outerSignal?.addEventListener('abort', () => controller.abort(), { once: true })
 
   try {
     const res = await fetch(`${API_BASE}/api/chat`, {
@@ -83,16 +88,27 @@ async function attemptCall(messages) {
  * Send a messages array to our Express proxy, which forwards to the LLM.
  * Automatically retries once on transient network errors, timeouts, or 5xx.
  *
- * @param {Message[]} messages
+ * @param {Message[]}   messages
+ * @param {AbortSignal} [signal] - optional; if aborted, the in-flight request
+ *   is cancelled immediately and an AbortError-flavoured LLMError is returned.
+ *   All existing callers that don't pass a signal continue to work unchanged.
  * @returns {Promise<LLMResult>}
  */
-export async function callLLM(messages) {
+export async function callLLM(messages, signal) {
   let lastResult
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-    lastResult = await attemptCall(messages)
+    // Don't even start a retry if the caller already cancelled
+    if (signal?.aborted) {
+      return { ok: false, error: 'Request cancelled by caller.', timedOut: false }
+    }
+
+    lastResult = await attemptCall(messages, signal)
 
     if (lastResult.ok) return lastResult
+
+    // Don't retry if caller cancelled mid-attempt
+    if (signal?.aborted) break
 
     // Only retry on transient failures
     if (!lastResult._retryable) break

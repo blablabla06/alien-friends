@@ -220,6 +220,208 @@ export async function scoreResponse(userText, character, conversationContext = [
   }
 }
 
+// ─── alien game scoring ───────────────────────────────────────────────────────
+
+/**
+ * Build the scoring prompt for the "Alien, Apparently" main game.
+ *
+ * Scoring dimensions match the game's visible meters:
+ *   clarity    — separates facts from assumptions; asks precise questions
+ *   respect    — avoids identity attacks; keeps feedback behaviour-specific
+ *   awareness  — recognises missing context; holds dual truths simultaneously
+ *   boundary   — proposes concrete rules; acknowledges impact without excusing it
+ *
+ * Extra rule: if the player's message tries to elicit something in the
+ * character's doesNotKnow list, awareness score is penalised (the player
+ * should know the character can't answer that).
+ *
+ * @param {string}    userText
+ * @param {object}    character          - alien-characters JSON
+ * @param {object}    sceneContext       - { level, title, narration, fact?, assumption? }
+ * @param {Array}     conversationContext - recent [{role, text}]
+ * @param {'en'|'zh'} lang
+ * @returns {{ role, content }[]}
+ */
+function buildAlienScoringPrompt(userText, character, sceneContext, conversationContext, lang = 'en') {
+  const personality   = (character.personalityTraits ?? []).join(', ')
+  const baseline      = character.emotionalState?.baseline ?? ''
+  const worsensIf     = (character.emotionalState?.triggers?.worsensIf ?? []).map(t => `  - ${t}`).join('\n')
+  const improvesIf    = (character.emotionalState?.triggers?.improvesIf ?? []).map(t => `  - ${t}`).join('\n')
+  const forbiddenList = (character.doesNotKnow ?? []).map(f => `  - ${f}`).join('\n')
+
+  const recentHistory = (conversationContext ?? [])
+    .slice(-4)
+    .map(e => `${e.role === 'user' ? 'Player' : character.name}: ${e.text}`)
+    .join('\n')
+
+  const sceneBlock = [
+    sceneContext.level    && `Chapter: ${sceneContext.level}`,
+    sceneContext.narration && `Situation: ${sceneContext.narration}`,
+    sceneContext.fact      && `Observed fact: ${sceneContext.fact}`,
+    sceneContext.assumption && `Group assumption (unverified): ${sceneContext.assumption}`,
+  ].filter(Boolean).join('\n')
+
+  const feedbackLang = lang === 'zh'
+    ? `Write the "feedback" string in Simplified Chinese (简体中文). One sentence, max 25 Chinese characters. Specific and actionable.`
+    : `Write the "feedback" string in English. One sentence, max 20 words. Specific and actionable.`
+
+  const system = `You are a social-skills coaching judge for "Alien, Apparently," a game about group bias and relational intelligence.
+Score a single player message across four dimensions. Respond with valid JSON only — no markdown, no text outside the JSON.
+
+## Character the player is addressing: ${character.name}
+Personality: ${personality}
+Emotional baseline: ${baseline}
+
+## What helps this character (improvesIf — raises awareness/boundary scores if matched):
+${improvesIf}
+
+## What worsens things (worsensIf — lowers respect/awareness scores if matched):
+${worsensIf}
+
+## Scene context
+${sceneBlock}
+
+## Forbidden knowledge for ${character.name}
+${forbiddenList}
+
+ELICITATION PENALTY: If the player's message attempts to draw out, confirm, or imply anything in the forbidden knowledge list above, reduce "awareness" by 10–20 points. The player should know the character cannot answer that.
+
+## Scoring dimensions (each 0–100)
+- clarity    : Does the player separate observed facts from assumptions? Do they ask precise questions rather than making accusations? Penalise vague, rambling, or rumour-repeating messages.
+- respect    : Is the message behaviour-specific rather than identity-attacking? Penalise personal labels ("he is weird/arrogant/alien"), generalisations, humiliation, or dismissal of a character's real feelings.
+- awareness  : Does the player show they understand there may be missing context on both sides? Do they hold dual truths? Apply ELICITATION PENALTY if they try to extract forbidden knowledge. Penalise messages that blindly side with or against any character without acknowledging the other side.
+- boundary   : Does the player propose or support a concrete, workable rule? Do they acknowledge real impact without erasing accountability? Penalise messages that either fully excuse or fully condemn without actionable follow-through.
+
+## composite
+Compute as: round(clarity*0.28 + respect*0.24 + awareness*0.28 + boundary*0.20)
+
+## ${feedbackLang}
+
+Respond with exactly this JSON shape (no extra keys):
+{
+  "clarity":    <integer 0-100>,
+  "respect":    <integer 0-100>,
+  "awareness":  <integer 0-100>,
+  "boundary":   <integer 0-100>,
+  "composite":  <integer 0-100>,
+  "feedback":   "<string>"
+}`
+
+  return [
+    { role: 'system', content: system },
+    ...(recentHistory
+      ? [{ role: 'user', content: `## Recent conversation\n${recentHistory}` }]
+      : []
+    ),
+    { role: 'user', content: `## Message to score\n"${userText}"\n\nReturn the JSON score object now.` },
+  ]
+}
+
+// ─── alien heuristic fallback ─────────────────────────────────────────────────
+
+const FACT_SIGNALS      = ['what exactly','did anyone','what happened','can we check','original','evidence','source','actually said','the figures','inconsistent','directly']
+const IDENTITY_ATTACKS  = ['weird','alien','creepy','arrogant','useless','kick','remove','always','never','that kind of person','just like','obviously','clearly']
+const BOUNDARY_SIGNALS  = ['next time','rule','agree','notify','message','tell','before changing','both','separate','two issues','process','going forward']
+const AWARENESS_SIGNALS = ['missing context','both sides','also','understand','his perspective','her perspective','what she knew','what he knew','didn\'t know','wasn\'t invited','why he','why she']
+
+function heuristicAlienScore(userText, lang = 'en') {
+  const lower    = userText.toLowerCase()
+  const words    = userText.trim().split(/\s+/).length
+  const baseLen  = words < 3 ? 40 : words > 60 ? 65 : 75
+
+  const hasAttack   = IDENTITY_ATTACKS.some(s => lower.includes(s))
+  const factBonus   = Math.min(countMatches(userText, FACT_SIGNALS)    * 12, 24)
+  const boundBonus  = Math.min(countMatches(userText, BOUNDARY_SIGNALS) * 15, 30)
+  const awareBonus  = Math.min(countMatches(userText, AWARENESS_SIGNALS) * 15, 30)
+
+  const clarity    = clamp(baseLen + factBonus - (hasAttack ? 10 : 0))
+  const respect    = clamp(hasAttack ? 30 : baseLen + 5)
+  const awareness  = clamp(baseLen + awareBonus - (hasAttack ? 15 : 0))
+  const boundary   = clamp(35 + boundBonus)
+  const composite  = Math.round(clarity * 0.28 + respect * 0.24 + awareness * 0.28 + boundary * 0.20)
+  const feedback   = lang === 'zh' ? '离线评分 — LLM 暂不可用。' : 'Scored offline — LLM unavailable.'
+
+  return { clarity, respect, awareness, boundary, composite, feedback }
+}
+
+// ─── alien dimension weights ──────────────────────────────────────────────────
+
+export const ALIEN_WEIGHTS = {
+  clarity:   0.28,
+  respect:   0.24,
+  awareness: 0.28,
+  boundary:  0.20,
+}
+
+/**
+ * Score a player's message using the alien-game dimensions:
+ * clarity, respect, awareness, boundary.
+ *
+ * Falls back to fast heuristics if the LLM is unavailable.
+ *
+ * @param {string}      userText
+ * @param {object}      character           - alien-characters JSON
+ * @param {object}      sceneContext        - { level, narration, fact?, assumption? }
+ * @param {Array}       conversationContext - recent [{role, text}]
+ * @param {'en'|'zh'}   [lang]
+ * @param {AbortSignal} [signal]            - optional; if aborted, falls back to
+ *   heuristic immediately rather than waiting for the LLM. All existing callers
+ *   that don't pass a signal continue to work unchanged.
+ * @returns {Promise<{clarity,respect,awareness,boundary,composite,feedback}>}
+ */
+export async function scoreAlienResponse(userText, character, sceneContext = {}, conversationContext = [], lang = 'en', signal) {
+  if (!userText?.trim()) {
+    const empty = lang === 'zh' ? '没有消息可评分。' : 'No message to score.'
+    return { clarity: 0, respect: 0, awareness: 0, boundary: 0, composite: 0, feedback: empty }
+  }
+
+  if (signal?.aborted) return heuristicAlienScore(userText, lang)
+
+  const messages = buildAlienScoringPrompt(userText, character, sceneContext, conversationContext, lang)
+
+  let result
+  try {
+    result = await callLLM(messages, signal)
+  } catch {
+    return heuristicAlienScore(userText, lang)
+  }
+
+  // If the caller cancelled mid-flight, return heuristic silently
+  if (signal?.aborted) return heuristicAlienScore(userText, lang)
+
+  if (!result.ok) {
+    console.warn('[scoringEngine] alien LLM call failed, using heuristic fallback:', result.error)
+    return heuristicAlienScore(userText, lang)
+  }
+
+  const parsed = parseScoringJson(result.text)
+
+  if (!parsed || typeof parsed.composite !== 'number') {
+    console.warn('[scoringEngine] malformed alien score JSON, using heuristic fallback. Raw:', result.text)
+    return heuristicAlienScore(userText, lang)
+  }
+
+  const clarity   = clamp(Math.round(parsed.clarity   ?? 50))
+  const respect   = clamp(Math.round(parsed.respect   ?? 50))
+  const awareness = clamp(Math.round(parsed.awareness ?? 50))
+  const boundary  = clamp(Math.round(parsed.boundary  ?? 50))
+  const composite = clamp(Math.round(
+    clarity   * ALIEN_WEIGHTS.clarity   +
+    respect   * ALIEN_WEIGHTS.respect   +
+    awareness * ALIEN_WEIGHTS.awareness +
+    boundary  * ALIEN_WEIGHTS.boundary
+  ))
+
+  return {
+    clarity,
+    respect,
+    awareness,
+    boundary,
+    composite,
+    feedback: typeof parsed.feedback === 'string' ? parsed.feedback : '',
+  }
+}
+
 // ─── scenario-level aggregation ──────────────────────────────────────────────
 
 export function aggregateScores(history) {

@@ -5,6 +5,7 @@
   "pronouns": "he/him",
   "age": 29,
   "avatar": "/src/assets/avatars/old-best-friend.png",
+  "relationshipContext": "Jordan and the player are former close platonic friends who had a falling-out. This was always a friendship — never romantic. The hurt, the guarded behaviour, and any longing to reconnect are all rooted in the loss of a deep platonic friendship, not romantic feelings. Do not introduce romantic undertones.",
   "personalityTraits": ["still hurt", "guarded and self-protective", "misses the friendship but won't say so first", "deeply loyal underneath the armour"],
   "communicationStyle": {
     "tone": "cool and clipped; softens to something almost like the old warmth if the player earns it",

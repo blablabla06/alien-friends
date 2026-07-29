@@ -22,11 +22,11 @@ const AVATAR_IMAGES = {
 }
 
 const AVATAR_PALETTE = {
-  'stranger':          '#4ECDC4',
+  'stranger':          '#8A8FA3',
   'coworker-jamie':    '#FFD166',
   'coworker-morgan':   '#FFD166',
-  'old-friend':        '#FF8B5E',
-  'uni-teammate':      '#A78BFA',
+  'old-friend':        '#D4A574',
+  'uni-teammate':      '#9B6B8C',
   'mum':               '#F9A8D4',
   'old-best-friend':   '#6EE7B7',
 }
@@ -44,7 +44,7 @@ export default function ScenarioIntroPage() {
 
   useEffect(() => {
     if (!scenario || scenario.id !== scenarioId) {
-      navigate('/select', { replace: true })
+      navigate('/', { replace: true })
     }
   }, [scenario, scenarioId, navigate])
 
@@ -52,11 +52,11 @@ export default function ScenarioIntroPage() {
 
   const npcKey      = scenario.npcRef ?? character.id
   const portraitSrc = AVATAR_IMAGES[npcKey]
-  const accentColor = AVATAR_PALETTE[npcKey] ?? '#4ECDC4'
+  const accentColor = AVATAR_PALETTE[npcKey] ?? '#8A8FA3'
 
   const overlayColor =
     connectionMood >= 60
-      ? 'rgba(255,139,94,0.18)'
+      ? 'rgba(212,165,116,0.18)'
       : connectionMood <= 35
       ? 'rgba(78,205,196,0.10)'
       : 'rgba(120,100,200,0.13)'
@@ -76,7 +76,7 @@ export default function ScenarioIntroPage() {
   return (
     <div
       className="fixed inset-0 flex flex-col items-center justify-center px-6"
-      style={{ backgroundColor: '#1A1B3A' }}
+      style={{ backgroundColor: '#1A1D29' }}
     >
       {/* Mood overlay tint */}
       <div
@@ -113,13 +113,13 @@ export default function ScenarioIntroPage() {
           <button
             onClick={handleBack}
             className="flex items-center gap-1 text-xs hover:opacity-80 transition-opacity"
-            style={{ color: '#4ECDC4', opacity: 0.75 }}
+            style={{ color: '#8A8FA3', opacity: 0.75 }}
           >
             {t('back')}
           </button>
           <span
             className="text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full"
-            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#4ECDC4' }}
+            style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#8A8FA3' }}
           >
             {t(`select.tierLabels.${scenario.difficultyTier}`)}
           </span>

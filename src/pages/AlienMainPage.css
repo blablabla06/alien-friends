@@ -1,0 +1,949 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   AlienMainPage.css
+   Scoped styles for the /play page only.
+   All class names are prefixed .af- to avoid collisions with the rest of the app.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Layout tokens ───────────────────────────────────────────────────────── */
+/*
+  --af-topbar-h  : height of the sticky top bar (measured, not set by us)
+  --af-dialogue-h: height reserved for the dialogue box inside .af-visual.
+                   Expressed as a vh fraction so it scales with the viewport.
+*/
+:root {
+  --af-topbar-h:   54px;   /* approximate — topbar uses padding not fixed h */
+  --af-dialogue-h: 18vh;   /* ~162px at 900px tall, ~194px at 1080px tall   */
+}
+
+/* ── Shell ───────────────────────────────────────────────────────────────── */
+
+.af-story-shell {
+  height: 100vh;
+  max-height: 100vh;
+  background: #1A1D29;
+  color: #EDEBE4;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ── Top bar ─────────────────────────────────────────────────────────────── */
+
+.af-topbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10, 12, 28, 0.84);
+  backdrop-filter: blur(14px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.af-topbar-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.af-topbar-title strong {
+  font-size: 15px;
+  letter-spacing: 0;
+  color: #D4A574;
+}
+
+.af-topbar-title span {
+  font-size: 11px;
+  color: rgba(237,235,228,0.48);
+}
+
+.af-ghost-button {
+  border: 1px solid rgba(138,143,163,0.35);
+  color: #8A8FA3;
+  background: rgba(138,143,163,0.09);
+  border-radius: 999px;
+  padding: 7px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* ── Main stage layout ───────────────────────────────────────────────────── */
+
+.af-stage {
+  width: min(1280px, 100%);
+  margin: 0 auto;
+  padding: clamp(10px, 1.5vh, 20px) clamp(10px, 1.5vw, 20px);
+  display: grid;
+  /*
+    Left column (scene visual): takes remaining space.
+    Right column (side panel): fixed 300px min, capped at 340px.
+    At narrow viewports the columns stack (see media query below).
+  */
+  grid-template-columns: minmax(0, 1fr) clamp(280px, 24vw, 340px);
+  gap: clamp(10px, 1.2vw, 18px);
+  flex: 1;
+  min-height: 0;   /* allow flex child to shrink below content size */
+  overflow: hidden;
+}
+
+/* ── Scene visual panel ──────────────────────────────────────────────────── */
+
+/*
+  Layout contract:
+    .af-visual     → fills the left column entirely (no fixed px height)
+    .af-dialogue   → absolute, sticks to bottom, height ≈ --af-dialogue-h
+    .af-character-fullbody → absolute, sits above dialogue
+*/
+
+.af-visual {
+  /* Fill the left column height — stage is flex:1 so this becomes the
+     remaining viewport height minus topbar. No min-height in px. */
+  height: 100%;
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 16px;
+  overflow: hidden;
+  position: relative;
+  /* contain: show full 1:1 square image, centered, with letterboxing */
+  background-position: center center;
+  background-size: cover;
+  background-repeat: no-repeat;
+  background-color: #0A0C1C;  /* fill letterbox with deep charcoal */
+  box-shadow: 0 16px 60px rgba(0,0,0,0.36);
+}
+
+.af-visual::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(10,12,28,0.92), rgba(10,12,28,0.34) 46%, rgba(10,12,28,0.78)),
+    radial-gradient(circle at 68% 28%, rgba(167,139,250,0.22), transparent 34%);
+}
+
+.af-visual.perspective::before {
+  background:
+    linear-gradient(135deg, rgba(4,20,28,0.88) 0%, rgba(4,20,28,0.18) 52%, rgba(4,20,28,0.82) 100%),
+    radial-gradient(ellipse at 58% 32%, rgba(138,143,163,0.38), transparent 48%),
+    radial-gradient(ellipse at 20% 70%, rgba(167,139,250,0.22), transparent 40%);
+  filter: hue-rotate(30deg) saturate(1.18);
+}
+
+.af-scene-content {
+  position: relative;
+  z-index: 2;
+  padding: clamp(14px, 2vh, 28px) clamp(14px, 2vw, 28px) 0;
+  pointer-events: none;
+}
+
+.af-scene-top {
+  pointer-events: auto;
+}
+
+.af-scene-meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.af-pill {
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.08);
+  padding: 5px 9px;
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  color: rgba(237,235,228,0.72);
+}
+
+.af-title-block {
+  max-width: 600px;
+  margin-top: clamp(8px, 1.2vh, 14px);
+}
+
+.af-title-block h1 {
+  margin: 0;
+  /* Scales from 28px (tiny viewport) to 56px (large screen) */
+  font-size: clamp(28px, 4.5vw, 56px);
+  line-height: 0.96;
+  letter-spacing: 0;
+  color: #EDEBE4;
+}
+
+.af-title-block p {
+  margin: 8px 0 0;
+  color: rgba(237,235,228,0.66);
+  font-size: clamp(12px, 1.1vw, 14px);
+}
+
+/* ── Dialogue box — anchored to scene bottom ─────────────────────────────── */
+
+.af-dialogue {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  background:
+    linear-gradient(to top, rgba(6,8,20,0.97) 0%, rgba(10,12,28,0.88) 100%);
+  border-top: 1px solid rgba(255,255,255,0.09);
+  /* Vertical padding scales with viewport height */
+  padding: clamp(12px, 1.8vh, 22px) clamp(14px, 2vw, 28px) clamp(14px, 2vh, 26px);
+  box-shadow:
+    0 -24px 56px rgba(0,0,0,0.60),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+  backdrop-filter: blur(14px);
+}
+
+.af-speaker-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.af-speaker-name {
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.af-speaker-role {
+  font-size: 11px;
+  color: rgba(237,235,228,0.48);
+}
+
+.af-line {
+  /* Scale the NPC speech line with viewport width */
+  font-size: clamp(16px, 1.8vw, 21px);
+  line-height: 1.38;
+  color: #fff9f0;
+}
+
+.af-narration {
+  margin-top: 8px;
+  font-size: clamp(12px, 1vw, 14px);
+  line-height: 1.5;
+  color: rgba(237,235,228,0.66);
+}
+
+/* ── Side column ─────────────────────────────────────────────────────────── */
+
+.af-side {
+  display: flex;
+  flex-direction: column;
+  gap: clamp(8px, 1vh, 14px);
+  min-width: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(138,143,163,0.28) transparent;
+}
+
+.af-panel {
+  flex-shrink: 0;   /* panels don't compress — side scrolls instead */
+  border: 1px solid rgba(255,255,255,0.11);
+  background: rgba(255,255,255,0.055);
+  border-radius: 12px;
+  padding: clamp(10px, 1.2vh, 15px);
+}
+
+.af-panel h2,
+.af-panel h3 {
+  margin: 0 0 8px;
+  color: #8A8FA3;
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+/* ── Objective / fact boxes ──────────────────────────────────────────────── */
+
+.af-objective {
+  color: rgba(237,235,228,0.78);
+  line-height: 1.45;
+  font-size: 13px;
+}
+
+.af-fact-box {
+  display: grid;
+  gap: 7px;
+}
+
+.af-fact-box div {
+  border-left: 3px solid rgba(138,143,163,0.75);
+  background: rgba(138,143,163,0.08);
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  color: rgba(237,235,228,0.78);
+}
+
+.af-fact-box div:nth-child(2) {
+  border-left-color: rgba(212,165,116,0.8);
+  background: rgba(212,165,116,0.08);
+}
+
+/* ── Choice buttons ──────────────────────────────────────────────────────── */
+
+.af-choice-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.af-choice-button {
+  width: 100%;
+  text-align: left;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.075);
+  color: #EDEBE4;
+  border-radius: 11px;
+  padding: clamp(9px, 1vh, 12px) 12px;
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.af-choice-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(212,165,116,0.52);
+  background: rgba(212,165,116,0.12);
+}
+
+.af-choice-label {
+  display: block;
+  font-size: 11px;
+  color: #D4A574;
+  font-weight: 900;
+  margin-bottom: 4px;
+}
+
+.af-choice-text {
+  display: block;
+  font-size: clamp(11px, 0.9vw, 13px);
+  line-height: 1.38;
+  color: rgba(237,235,228,0.8);
+}
+
+/* ── Rumour mutation chain ───────────────────────────────────────────────── */
+
+.af-mutation {
+  display: grid;
+  gap: 7px;
+  counter-reset: rumour-step;
+}
+
+.af-mutation-step {
+  counter-increment: rumour-step;
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  font-size: 12px;
+  line-height: 1.35;
+  color: rgba(237,235,228,0.78);
+}
+
+.af-mutation-step::before {
+  content: counter(rumour-step);
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: rgba(212,165,116,0.18);
+  color: #D4A574;
+  font-size: 10px;
+  font-weight: 900;
+}
+
+/* ── Score meters ────────────────────────────────────────────────────────── */
+
+.af-meter-stack {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 9px;
+}
+
+.af-meter {
+  min-width: 0;
+}
+
+.af-meter-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 11px;
+  color: rgba(237,235,228,0.55);
+  margin-bottom: 4px;
+}
+
+.af-meter-row strong {
+  color: rgba(237,235,228,0.9);
+}
+
+.af-meter-track {
+  height: 6px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.1);
+}
+
+.af-meter-fill {
+  height: 100%;
+  border-radius: 999px;
+  transition: width 0.28s ease;
+}
+
+/* ── Feedback line ───────────────────────────────────────────────────────── */
+
+.af-feedback {
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(237,235,228,0.64);
+}
+
+/* ── Free-text input ─────────────────────────────────────────────────────── */
+
+.af-final-input {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.af-final-input textarea {
+  width: 100%;
+  min-height: clamp(60px, 8vh, 82px);
+  resize: vertical;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(10,12,28,0.55);
+  color: #EDEBE4;
+  padding: 10px 12px;
+  outline: none;
+  font-size: 13px;
+  line-height: 1.4;
+  box-sizing: border-box;
+}
+
+.af-primary-button {
+  width: 100%;
+  border: 0;
+  background: #D4A574;
+  color: #1A1D29;
+  border-radius: 11px;
+  padding: 11px 14px;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.af-primary-button:disabled {
+  opacity: 0.45;
+}
+
+/* ── Full-body character illustration (visual novel) ─────────────────────── */
+
+.af-character-fullbody {
+  position: absolute;
+  bottom: var(--af-dialogue-h);
+  right: 5%;
+  /*
+    Height = scene height minus dialogue area minus top clearance.
+    clamp() ensures a sensible size at both very small and very large screens.
+    At 900px viewport height → scene ≈ ~840px → char ≈ 560px
+    At 1080px viewport height → scene ≈ ~1010px → char ≈ 680px
+  */
+  height: clamp(280px, calc(100% - var(--af-dialogue-h) - 8vh), 720px);
+  width: auto;
+  max-width: 44%;
+  object-fit: contain;
+  object-position: bottom center;
+  z-index: 2;
+  pointer-events: none;
+  animation: af-char-enter 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+  -webkit-mask-image: linear-gradient(to top, transparent 0%, black 7%);
+  mask-image: linear-gradient(to top, transparent 0%, black 7%);
+}
+
+.af-character-fullbody.flipped {
+  right: auto;
+  left: 5%;
+  transform: scaleX(-1);
+  animation: af-char-enter-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@keyframes af-char-enter {
+  from { opacity: 0; transform: translateX(22px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes af-char-enter-left {
+  from { opacity: 0; transform: scaleX(-1) translateX(22px); }
+  to   { opacity: 1; transform: scaleX(-1) translateX(0); }
+}
+
+/* ── Speaker portrait (dialogue box) ────────────────────────────────────── */
+
+.af-speaker-identity {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.af-speaker-portrait {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+  object-position: top center;
+  border: 2px solid rgba(255,255,255,0.18);
+  flex-shrink: 0;
+}
+
+/* ── Roster character face (portrait image) ──────────────────────────────── */
+
+.af-character-face {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 2px solid;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+}
+
+.af-character-face img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+}
+
+.af-roster-panel {
+  padding: clamp(9px, 1vh, 13px);
+}
+
+.af-roster-list {
+  display: grid;
+  gap: 7px;
+}
+
+.af-roster-item {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(10,12,28,0.34);
+  border-radius: 11px;
+  padding: 8px;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.af-roster-item.active {
+  border-color: rgba(212,165,116,0.66);
+  background: rgba(212,165,116,0.11);
+  transform: translateY(-1px);
+}
+
+.af-roster-copy {
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.af-roster-topline {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.af-character-name {
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 900;
+  color: #EDEBE4;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.af-roster-tag,
+.af-speaking-dot {
+  white-space: nowrap;
+  border-radius: 999px;
+  background: rgba(138,143,163,0.13);
+  color: #8A8FA3;
+  padding: 2px 6px;
+  font-size: 9px;
+  font-weight: 900;
+}
+
+.af-speaking-dot {
+  background: rgba(212,165,116,0.16);
+  color: #D4A574;
+}
+
+.af-roster-detail {
+  font-size: 10px;
+  line-height: 1.35;
+  color: rgba(237,235,228,0.42);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.af-roster-detail.revealed {
+  color: rgba(237,235,228,0.72);
+}
+
+/* ── Ending / report screen ──────────────────────────────────────────────── */
+
+.af-report {
+  flex: 1;
+  min-height: 0;
+  width: min(1000px, 100%);
+  margin: 0 auto;
+  padding: clamp(16px, 2.5vh, 28px) clamp(12px, 2vw, 20px);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 360px);
+  gap: 18px;
+  align-items: stretch;
+  overflow-y: auto;
+}
+
+.af-ending-main {
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,0.12);
+  /*
+    Layer order (top → bottom):
+    1. tint:    semi-transparent color wash keyed to ending outcome
+    2. scrim:   dark gradient from bottom-left where text sits, lighter toward edges
+    3. bg-img:  scene-ending.png
+    4. fallback solid
+  */
+  background:
+    /* 1. outcome tint — color set via JS inline style CSS var */
+    linear-gradient(135deg,
+      var(--af-ending-tint, rgba(212,165,116,0.22)) 0%,
+      transparent 60%
+    ),
+    /* 2. dark scrim — bottom-left heavy, lighter toward top-right */
+    linear-gradient(135deg,
+      rgba(10,12,28,0.84) 0%,
+      rgba(10,12,28,0.52) 38%,
+      rgba(10,12,28,0.20) 65%,
+      rgba(10,12,28,0.46) 100%
+    ),
+    /* 3. scene image */
+    var(--af-ending-bg, none),
+    /* 4. fallback */
+    rgba(20,22,38,1);
+  /* contain: show full 1:1 image, centered */
+  background-size: auto, auto, contain, auto;
+  background-position: center, center, center center, center;
+  background-repeat: no-repeat;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+}
+
+.af-ending-main h1 {
+  margin: 8px 0 10px;
+  font-size: clamp(36px, 6vw, 72px);
+  line-height: 0.96;
+  letter-spacing: 0;
+}
+
+.af-ending-kicker {
+  color: #8A8FA3;
+  text-transform: uppercase;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.af-ending-summary {
+  font-size: clamp(14px, 1.3vw, 17px);
+  line-height: 1.52;
+  color: rgba(237,235,228,0.82);
+  max-width: 58ch;
+}
+
+.af-ending-quote {
+  font-size: clamp(16px, 1.5vw, 20px);
+  color: #D4A574;
+  font-weight: 900;
+  margin-top: 16px;
+}
+
+.af-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 24px;
+}
+
+.af-action-button {
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.08);
+  color: #EDEBE4;
+  border-radius: 999px;
+  padding: 9px 14px;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.af-action-button.primary {
+  background: #D4A574;
+  color: #1A1D29;
+  border-color: transparent;
+}
+
+.af-summary-list {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  color: rgba(237,235,228,0.72);
+}
+
+.af-summary-list div {
+  padding: 9px 11px;
+  border-radius: 9px;
+  background: rgba(255,255,255,0.055);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* ── Memory / conclusion book ────────────────────────────────────────────── */
+
+.af-memory-shell {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  width: min(1100px, 100%);
+  margin: 0 auto;
+  padding: clamp(14px, 2vh, 24px) clamp(12px, 2vw, 20px) clamp(20px, 3vh, 34px);
+}
+
+.af-book {
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 16px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.07), rgba(255,255,255,0.035));
+  box-shadow: 0 20px 70px rgba(0,0,0,0.32);
+  padding: 22px;
+}
+
+.af-book-header {
+  max-width: 760px;
+  margin-bottom: 18px;
+}
+
+.af-book-kicker {
+  color: #8A8FA3;
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.af-book-header h1 {
+  margin: 6px 0 8px;
+  color: #EDEBE4;
+  font-size: clamp(28px, 5vw, 58px);
+  line-height: 1;
+  letter-spacing: 0;
+}
+
+.af-book-header p {
+  margin: 0;
+  color: rgba(237,235,228,0.66);
+  line-height: 1.55;
+  font-size: 14px;
+}
+
+.af-memory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.af-memory-page {
+  min-width: 0;
+  border: 1px solid rgba(70, 42, 18, 0.14);
+  background: #EDEBE4;
+  color: #1B1A22;
+  border-radius: 10px;
+  padding: 14px;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55), 0 8px 24px rgba(0,0,0,0.18);
+}
+
+.af-memory-page h2 {
+  margin: 4px 0 10px;
+  color: #1B1A22;
+  font-size: 18px;
+  line-height: 1.15;
+}
+
+.af-memory-meta {
+  color: #8B5E3C;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.af-memory-section {
+  border-top: 1px solid rgba(27,26,34,0.11);
+  padding-top: 8px;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.af-memory-section strong {
+  display: block;
+  color: #8B5E3C;
+  font-size: 10px;
+  text-transform: uppercase;
+  margin-bottom: 3px;
+}
+
+.af-memory-fact-list {
+  display: grid;
+  gap: 5px;
+}
+
+.af-memory-fact-list div,
+.af-memory-rumour-list div {
+  border-radius: 7px;
+  background: rgba(27,26,34,0.06);
+  padding: 7px;
+}
+
+.af-memory-rumour-list {
+  display: grid;
+  gap: 5px;
+  counter-reset: memory-rumour;
+}
+
+.af-memory-rumour-list div::before {
+  counter-increment: memory-rumour;
+  content: counter(memory-rumour) ". ";
+  color: #8B5E3C;
+  font-weight: 900;
+}
+
+.af-memory-status {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.af-memory-status .af-meter-row {
+  color: rgba(27,26,34,0.62);
+}
+
+.af-memory-status .af-meter-row strong {
+  display: inline;
+  margin: 0;
+  color: #1B1A22;
+}
+
+.af-memory-status .af-meter-track {
+  background: rgba(27,26,34,0.1);
+}
+
+/* ── Responsive — tablet (≤ 960px wide) ─────────────────────────────────── */
+
+@media (max-width: 960px) {
+  .af-stage {
+    /* Stack columns: visual on top, side panel scrollable below */
+    grid-template-columns: 1fr;
+    grid-template-rows: clamp(340px, 55vh, 520px) 1fr;
+    overflow-y: auto;
+  }
+
+  .af-report {
+    grid-template-columns: 1fr;
+  }
+
+  .af-visual {
+    height: 100%; /* fills its grid row */
+  }
+
+  .af-side {
+    /* On tablet the side panel is a second row, not a fixed-height column */
+    overflow-y: visible;
+  }
+
+  .af-memory-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .af-character-fullbody {
+    height: clamp(220px, calc(100% - var(--af-dialogue-h) - 6vh), 500px);
+    max-width: 38%;
+    right: 4%;
+  }
+
+  .af-character-fullbody.flipped {
+    left: 4%;
+  }
+}
+
+/* ── Responsive — mobile (≤ 560px wide) ─────────────────────────────────── */
+
+@media (max-width: 560px) {
+  :root {
+    --af-dialogue-h: 22vh; /* slightly taller dialogue on mobile */
+  }
+
+  .af-topbar {
+    padding: 10px 14px;
+  }
+
+  .af-stage {
+    padding: 10px;
+    grid-template-rows: clamp(280px, 50vh, 400px) 1fr;
+  }
+
+  .af-scene-content {
+    padding: 14px 14px 0;
+  }
+
+  .af-title-block h1 {
+    font-size: clamp(22px, 7vw, 34px);
+  }
+
+  .af-line {
+    font-size: clamp(15px, 4vw, 18px);
+  }
+
+  .af-meter-stack,
+  .af-memory-grid,
+  .af-memory-status {
+    grid-template-columns: 1fr;
+  }
+
+  /* Hide full-body on mobile — dialogue anchors to scene bottom alone */
+  .af-character-fullbody {
+    display: none;
+  }
+
+  .af-dialogue {
+    padding: 12px 14px 14px;
+  }
+}

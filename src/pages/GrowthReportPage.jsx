@@ -1,22 +1,22 @@
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
-import { useLang } from '../context/LanguageContext.jsx'
+import { useLang, resolveField } from '../context/LanguageContext.jsx'
 import LevelBadge from '../components/LevelBadge.jsx'
 import StreakTracker from '../components/StreakTracker.jsx'
 import { levelProgress } from '../lib/progressionSystem.js'
 import ScoreBar from '../components/ScoreBar.jsx'
 
 // ── Palette constants ─────────────────────────────────────────────────────────
-const CORAL   = '#FF8B5E'
-const TEAL    = '#4ECDC4'
-const INDIGO  = '#1A1B3A'
+const CORAL   = '#D4A574'
+const TEAL    = '#8A8FA3'
+const INDIGO  = '#1A1D29'
 const BG_CARD = 'rgba(255,255,255,0.05)'
 const BG_CARD_HOVER = 'rgba(255,255,255,0.08)'
 
 const DIM_COLORS = {
   clarity:    TEAL,
   empathy:    CORAL,
-  politeness: '#a78bfa',
+  politeness: '#9B6B8C',
   expression: '#fbbf24',
 }
 
@@ -107,7 +107,7 @@ function recommendScenario(weakestDim, completedScenarios) {
 
 // ── SVG line chart ────────────────────────────────────────────────────────────
 
-function TrendChart({ sessions }) {
+function TrendChart({ sessions, lang }) {
   if (sessions.length < 1) return null
 
   const W = 320, H = 120
@@ -136,7 +136,7 @@ function TrendChart({ sessions }) {
       {n > 1 && (
         <polygon
           points={[...scores.map((v, i) => `${xOf(i)},${yOf(v)}`), `${xOf(n-1)},${yOf(0)}`, `${xOf(0)},${yOf(0)}`].join(' ')}
-          fill="rgba(255,139,94,0.08)"
+          fill="rgba(212,165,116,0.08)"
         />
       )}
       {n > 1 && (
@@ -144,7 +144,9 @@ function TrendChart({ sessions }) {
       )}
       {ordered.map((sess, i) => {
         const cx = xOf(i), cy = yOf(scores[i])
-        const label = (sess.scenarioTitle ?? sess.scenarioId ?? '').split('-')[0]
+        // Safely resolve scenarioTitle whether it's a plain string or a { en, zh } object
+        const titleStr = resolveField(sess.scenarioTitle, lang) || (sess.scenarioId ?? '')
+        const label = titleStr.split('-')[0]
         return (
           <g key={i}>
             <circle cx={cx} cy={cy} r={4} fill={CORAL} />
@@ -190,7 +192,7 @@ function InsightPanel({ sessions, dimLabels, t }) {
         <span className="text-xs text-warm-white opacity-50">{t('growth.avgStrong')(strongest.avg)}</span>
       </div>
       <div className="flex-1 rounded-xl p-4 flex flex-col gap-1"
-        style={{ backgroundColor: 'rgba(255,139,94,0.10)', border: '1px solid rgba(255,139,94,0.18)' }}>
+        style={{ backgroundColor: 'rgba(212,165,116,0.10)', border: '1px solid rgba(212,165,116,0.18)' }}>
         <span className="text-[10px] font-semibold uppercase tracking-wide" style={{ color: CORAL }}>{t('growth.needsWork')}</span>
         <span className="text-base font-bold font-display" style={{ color: CORAL }}>{dimLabels[weakest.dim]}</span>
         <span className="text-xs text-warm-white opacity-50">{t('growth.avgGrow')(weakest.avg)}</span>
@@ -320,7 +322,7 @@ function SessionRow({ session, t, scenarioTitleLabel }) {
 export default function GrowthReportPage() {
   const navigate   = useNavigate()
   const { state }  = useGameState()
-  const { t }      = useLang()
+  const { t, lang } = useLang()
   const progress   = levelProgress(state.xp)
 
   // Dimension labels and scenario titles from translations
@@ -339,11 +341,15 @@ export default function GrowthReportPage() {
   const hasSessions = sessions.length > 0
   const { best, worst } = findExtremes(sessions)
 
-  // Helper: get translated scenario title from a session
+  // Helper: get translated scenario title from a session.
+  // Prefers the translations map; falls back to resolveField on the stored
+  // scenarioTitle (which may now be a { en, zh } object, not a plain string).
   function getSessionTitle(sess) {
-    return t(`scenarioTitles.${sess.scenarioId}`) !== `scenarioTitles.${sess.scenarioId}`
-      ? t(`scenarioTitles.${sess.scenarioId}`)
-      : (sess.scenarioTitle ?? sess.scenarioId ?? '')
+    const key = `scenarioTitles.${sess.scenarioId}`
+    const fromTranslations = t(key)
+    if (fromTranslations !== key) return fromTranslations
+    // Fall back: resolve the stored title field (object or string)
+    return resolveField(sess.scenarioTitle, lang) || sess.scenarioId || ''
   }
 
   return (
@@ -393,7 +399,7 @@ export default function GrowthReportPage() {
               <h3 className="font-semibold font-display text-teal-chrome">{t('growth.compositeTrend')}</h3>
               <span className="text-xs text-warm-white opacity-35">{t('growth.sessionCount')(sessions.length)}</span>
             </div>
-            <TrendChart sessions={sessions} />
+            <TrendChart sessions={sessions} lang={lang} />
             <p className="text-xs text-warm-white opacity-35 text-center -mt-1">
               {t('growth.eachPoint')}
             </p>
@@ -427,7 +433,7 @@ export default function GrowthReportPage() {
                 turn={worst}
                 label={t('growth.needsWork')}
                 color={CORAL}
-                borderColor="rgba(255,139,94,0.25)"
+                borderColor="rgba(212,165,116,0.25)"
                 t={t}
                 scenarioLabel={worst ? getSessionTitle({ scenarioId: worst.scenarioId }) : ''}
               />

@@ -1,0 +1,58 @@
+{
+  "id": "evan",
+  "name": "Evan",
+  "role": "The labelled outsider",
+  "groupRole": "Member",
+  "color": "#A78BFA",
+  "personalityTraits": [
+    "Technically capable",
+    "Direct communicator",
+    "Rarely participates in informal activities",
+    "Gives short responses",
+    "Sometimes changes shared work without explanation",
+    "Believes efficiency is more important than discussion",
+    "Does not notice emotional impact easily",
+    "Becomes defensive when excluded"
+  ],
+  "communicationStyle": {
+    "tone": "Terse and task-focused — not cold by intent, but reads as cold to others",
+    "tendencies": [
+      "Explains decisions in terms of logic and outcome, not process or feelings",
+      "Does not volunteer context unless directly asked",
+      "Becomes shorter and more guarded when he senses group hostility",
+      "More open when the player approaches without prior judgement"
+    ],
+    "responseLength": "Short — factual, occasionally clipped"
+  },
+  "knownFacts": [
+    "He believes direct correction is more efficient than asking first",
+    "He knows the group dislikes him",
+    "The figures in Slide 6 were inconsistent",
+    "The submission deadline was close",
+    "He made the correction directly without waiting"
+  ],
+  "doesNotKnow": [
+    "Daniel was actively rehearsing from the old version of the slide",
+    "Mira told the player he was 'difficult' before they had even met",
+    "The group interpreted his short replies as deliberate hostility",
+    "The group is currently considering removing him from the project"
+  ],
+  "emotionalState": {
+    "baseline": "Guarded and quietly hurt — expects to be misread, so pre-emptively withdraws, which confirms the group's assumption that he is unfriendly",
+    "triggers": {
+      "worsensIf": [
+        "Player accuses him before asking for his side",
+        "Player repeats the group's label ('you think everyone is incompetent') as fact",
+        "Player stays silent while others attack him — the silence reads as agreement"
+      ],
+      "improvesIf": [
+        "Player asks him directly what made the change feel urgent",
+        "Player separates the impact of the change from his intention",
+        "Player acknowledges both that he fixed a real problem and that the communication caused harm"
+      ]
+    }
+  },
+  "storyRole": "The character the group turns into the Alien — genuinely causes a collaboration problem AND experiences unfair exclusion; the game asks the player to hold both truths simultaneously",
+  "portraitRef": "/src/assets/characters/evan-portrait.png",
+  "fullBodyRef": "/src/assets/characters/evan-fullbody.png"
+}

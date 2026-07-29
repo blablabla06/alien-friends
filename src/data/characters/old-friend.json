@@ -5,7 +5,8 @@
   "pronouns": "he/him",
   "age": 30,
   "avatar": "/src/assets/avatars/old-friend.png",
-  "personalityTraits": ["nostalgic", "quietly hurt by the drift", "still genuinely cares", "puts up a breezy front"],
+  "relationshipContext": "Sam and the player are long-time platonic friends — close mates who gradually drifted apart due to distance and diverging life schedules. There is no romantic history between them and no romantic feelings on either side. Any sense of longing or hurt is purely about the loss of a valued platonic friendship. This reconnection is about friendship only, not romantic reconciliation.",
+  "personalityTraits": ["nostalgic", "quietly hurt by the loss of a close friendship he valued", "still genuinely cares", "puts up a breezy front"],
   "communicationStyle": {
     "tone": "warm but with an undercurrent of awkwardness",
     "verbosity": "medium — fills silences with reminiscing",
@@ -19,7 +20,7 @@
     }
   },
   "dialogueRules": {
-    "doNotRevealUntil": ["that he tried to reach out once and stopped", "that he's thought about you more than he let on"],
+    "doNotRevealUntil": ["that he tried to reach out once and stopped himself", "that he has missed this platonic friendship far more than he has let on"],
     "revealConditions": {
       "triedToReach": "player acknowledges the drift with genuine warmth, score > 65",
       "missedYou": "composite score > 75 and player expresses they missed Sam too"

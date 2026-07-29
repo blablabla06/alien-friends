@@ -17,18 +17,18 @@ const AVATAR_IMAGES = {
 }
 
 const AVATAR_PALETTE = {
-  'stranger':          { bg: '#4ECDC4', text: '#1A1B3A' },
-  'coworker-jamie':    { bg: '#FFD166', text: '#1A1B3A' },
-  'coworker-morgan':   { bg: '#FFD166', text: '#1A1B3A' },
-  'old-friend':        { bg: '#FF8B5E', text: '#1A1B3A' },
-  'uni-teammate':      { bg: '#A78BFA', text: '#1A1B3A' },
-  'mum':               { bg: '#F9A8D4', text: '#1A1B3A' },
-  'old-best-friend':   { bg: '#6EE7B7', text: '#1A1B3A' },
+  'stranger':          { bg: '#8A8FA3', text: '#1A1D29' },
+  'coworker-jamie':    { bg: '#FFD166', text: '#1A1D29' },
+  'coworker-morgan':   { bg: '#FFD166', text: '#1A1D29' },
+  'old-friend':        { bg: '#D4A574', text: '#1A1D29' },
+  'uni-teammate':      { bg: '#9B6B8C', text: '#1A1D29' },
+  'mum':               { bg: '#F9A8D4', text: '#1A1D29' },
+  'old-best-friend':   { bg: '#6EE7B7', text: '#1A1D29' },
 }
 
 export default function NpcAvatar({ characterId, name }) {
   const img     = AVATAR_IMAGES[characterId]
-  const palette = AVATAR_PALETTE[characterId] ?? { bg: '#4ECDC4', text: '#1A1B3A' }
+  const palette = AVATAR_PALETTE[characterId] ?? { bg: '#8A8FA3', text: '#1A1D29' }
 
   return (
     <div className="flex items-center gap-3">

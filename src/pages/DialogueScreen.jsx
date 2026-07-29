@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
 import { buildCharacterPrompt, buildClosingPrompt, buildSuggestionOnlyPrompt } from '../lib/aiCharacterPrompt.js'
+import { extractCleanDialogue } from '../lib/npcResponseParser.js'
 import { callLLM } from '../lib/llmClient.js'
 import { scoreResponse } from '../lib/scoringEngine.js'
 
@@ -11,6 +12,26 @@ import ChatBubble from '../components/ChatBubble.jsx'
 import UserInputBox from '../components/UserInputBox.jsx'
 import SuggestedReplyOptions from '../components/SuggestedReplyOptions.jsx'
 import MoodMeter from '../components/MoodMeter.jsx'
+
+import bgCoffeeShop    from '../assets/backgrounds/coffee-shop.png'
+import bgOffice        from '../assets/backgrounds/office.png'
+import bgMeetingRoom   from '../assets/backgrounds/meeting-room.png'
+import bgParkBench     from '../assets/backgrounds/park-bench.png'
+import bgStudyRoom     from '../assets/backgrounds/study-room.png'
+// import bgDiscussionRoom from '../assets/backgrounds/discussion-room.png'
+import bgHomeKitchen   from '../assets/backgrounds/home-kitchen.png'
+import bgSupermarket   from '../assets/backgrounds/supermarket.png'
+
+const BG_MAP = {
+  '/assets/backgrounds/coffee-shop.png':     bgCoffeeShop,
+  '/assets/backgrounds/office.png':          bgOffice,
+  '/assets/backgrounds/meeting-room.png':    bgMeetingRoom,
+  '/assets/backgrounds/park-bench.png':      bgParkBench,
+  '/assets/backgrounds/study-room.png':      bgStudyRoom,
+  // '/assets/backgrounds/discussion-room.png': bgDiscussionRoom,
+  '/assets/backgrounds/home-kitchen.png':    bgHomeKitchen,
+  '/assets/backgrounds/supermarket.png':     bgSupermarket,
+}
 
 export default function DialogueScreen() {
   const { scenarioId } = useParams()
@@ -40,7 +61,7 @@ export default function DialogueScreen() {
   // ── Guard: redirect if no scenario loaded ──
   useEffect(() => {
     if (!scenario || scenario.id !== scenarioId) {
-      navigate('/select')
+      navigate('/')
     }
   }, [scenario, scenarioId, navigate])
 
@@ -52,9 +73,12 @@ export default function DialogueScreen() {
     if (openingFiredRef.current) return
     openingFiredRef.current = true
 
+    const { cleanDialogue: openingDialogue, combinedNarration: openingNarration } =
+      extractCleanDialogue(resolveField(scenario.openingLine, lang), null)
     actions.addDialogueEntry({
-      role: 'npc',
-      text: resolveField(scenario.openingLine, lang),
+      role:      'npc',
+      text:      openingDialogue,
+      npcAction: openingNarration,
       timestamp: Date.now(),
     })
   }, []) // eslint-disable-line
@@ -68,8 +92,19 @@ export default function DialogueScreen() {
 
   // ── Core turn handler ──
   // isSuggestion=true when the player tapped a suggested reply; false when they typed manually
-  async function handleSend(text, isSuggestion = false) {
-    if (!text.trim() || isLoading || conversationEnded) return
+  // replyObj may be a {action, line, style} object (new) or a plain string (free text / legacy)
+  async function handleSend(replyObj, isSuggestion = false) {
+    // Strip any surrounding quotes (" or ') that the LLM may have included, then trim whitespace.
+    const stripQuotes = (s) => String(s ?? '').trim().replace(/^["'](.*)["']$/s, '$1').trim()
+
+    // Normalise: accept either a reply object or a plain string
+    const isObj   = replyObj && typeof replyObj === 'object'
+    const cleanLine = isObj ? stripQuotes(replyObj.line) : ''
+    const llmText = isObj
+      ? (replyObj.action ? `${replyObj.action} "${cleanLine}"` : cleanLine)
+      : String(replyObj ?? '').trim()
+
+    if (!llmText.trim() || isLoading || conversationEnded) return
 
     setLlmError(null)
 
@@ -82,10 +117,17 @@ export default function DialogueScreen() {
       })
     }
 
-    const userEntry = { role: 'user', text: text.trim(), timestamp: Date.now() }
+    const userEntry = {
+      role:      'user',
+      text:      llmText,
+      // Store action/line separately for split rendering in chat history — use cleanLine so the
+      // displayed text is also free of any LLM-added surrounding quotes.
+      ...(isObj && replyObj.action ? { action: replyObj.action, line: cleanLine } : {}),
+      timestamp: Date.now(),
+    }
     actions.addDialogueEntry(userEntry)
     // Preserve the player's text before clearing — used by the retry button
-    pendingRetryRef.current = { text: text.trim(), isSuggestion }
+    pendingRetryRef.current = { text: llmText, isSuggestion }
     setInputText('')
     setSuggestions([])
 
@@ -97,7 +139,7 @@ export default function DialogueScreen() {
 
     // Score and NPC reply run in parallel.
     // Scoring is fire-and-forget: if it fails we skip that turn's score silently.
-    const scoringPromise = scoreResponse(text, character, updatedHistory, undefined, lang).catch(() => null)
+    const scoringPromise = scoreResponse(llmText, character, updatedHistory, undefined, lang).catch(() => null)
 
     if (isLastTurn) {
       const [scores] = await Promise.all([
@@ -108,7 +150,7 @@ export default function DialogueScreen() {
     } else {
       const [scores] = await Promise.all([
         scoringPromise,
-        fetchNpcTurn(text, updatedHistory),
+        fetchNpcTurn(llmText, updatedHistory),
       ])
       if (scores) actions.addScoreEntry(scores)
     }
@@ -169,9 +211,16 @@ export default function DialogueScreen() {
       parsed = { npcResponse: result.text, suggestedReplies: [], moodShift: 'neutral' }
     }
 
+    // Defensively split narration from spoken dialogue regardless of model compliance.
+    const { cleanDialogue, combinedNarration } = extractCleanDialogue(
+      parsed.npcResponse ?? result.text,
+      parsed.npcAction   ?? null,
+    )
+
     actions.addDialogueEntry({
-      role: 'npc',
-      text: parsed.npcResponse ?? result.text,
+      role:      'npc',
+      text:      cleanDialogue,
+      npcAction: combinedNarration,
       timestamp: Date.now(),
     })
 
@@ -222,18 +271,25 @@ export default function DialogueScreen() {
       return
     }
 
-    let closingText = result.text
+    let rawClosingText = result.text
+    let rawClosingAction = null
     try {
       const clean = result.text.replace(/^```json\s*/i, '').replace(/```\s*$/, '').trim()
       const parsed = JSON.parse(clean)
-      closingText = parsed.npcResponse ?? result.text
+      rawClosingText  = parsed.npcResponse ?? result.text
+      rawClosingAction = parsed.npcAction ?? null
     } catch {
       // plain text fallback — use as-is
     }
 
+    // Defensively split narration from spoken dialogue.
+    const { cleanDialogue: closingText, combinedNarration: closingAction } =
+      extractCleanDialogue(rawClosingText, rawClosingAction)
+
     actions.addDialogueEntry({
-      role: 'npc',
-      text: closingText,
+      role:      'npc',
+      text:      closingText,
+      npcAction: closingAction,
       timestamp: Date.now(),
     })
 
@@ -268,10 +324,56 @@ export default function DialogueScreen() {
 
   const maxTurns = scenario.maxTurns ?? 6
 
+  const bgSrc = BG_MAP[scenario.backgroundImage] ?? null
+
+  // Mood-driven overlay colour: warm coral when connected, cool teal when distant
+  const moodOverlay =
+    connectionMood >= 60
+      ? 'rgba(212,165,116,0.22)'
+      : connectionMood <= 35
+      ? 'rgba(78,205,196,0.14)'
+      : 'rgba(120,100,200,0.10)'
+
   return (
-    <div className="min-h-screen flex flex-col max-w-xl mx-auto">
-      {/* Header */}
-      <div className="flex items-center justify-between px-4 pt-5 pb-3 border-b border-white/10">
+    <div
+      className="min-h-screen flex flex-col max-w-xl mx-auto relative"
+      style={bgSrc ? {
+        backgroundImage: `url("${bgSrc}")`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      } : undefined}
+    >
+      {/* Dark base scrim so text is always readable over any background photo */}
+      {bgSrc && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ backgroundColor: 'rgba(10,12,28,0.5)', zIndex: 0 }}
+        />
+      )}
+      {/* Mood colour overlay — warms as connection score rises */}
+      {bgSrc && (
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundColor: moodOverlay,
+            transition: 'background-color 0.8s ease',
+            zIndex: 1,
+          }}
+        />
+      )}
+      {/* All content sits above the overlays — flex column, constrained to viewport height */}
+      <div className="relative flex flex-col" style={{ zIndex: 2, height: '100dvh' }}>
+      {/* ── Sticky header — sticks to top of the viewport scroll ── */}
+      <div
+        className="flex-shrink-0 flex items-center justify-between px-4 pt-5 pb-3 border-b border-white/10"
+        style={{
+          position: 'sticky',
+          top: 0,
+          zIndex: 10,
+          backgroundColor: 'rgba(10,12,28,0.1)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
         <NpcAvatar characterId={character.id} name={character.name} />
         <div className="flex items-center gap-4">
           <span className="text-xs text-warm-white opacity-40">
@@ -294,7 +396,7 @@ export default function DialogueScreen() {
               onClick={handleRetry}
               disabled={isLoading}
               className="self-start text-xs font-semibold px-3 py-1.5 rounded-full transition-opacity disabled:opacity-40"
-              style={{ backgroundColor: '#FF8B5E22', color: '#FF8B5E', border: '1px solid #FF8B5E44' }}
+              style={{ backgroundColor: '#D4A57422', color: '#D4A574', border: '1px solid #D4A57444' }}
             >
               {t('tryAgain')}
             </button>
@@ -311,11 +413,43 @@ export default function DialogueScreen() {
         </div>
       )}
 
-      {/* Chat history */}
-      <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 flex flex-col gap-3">
-        {dialogueHistory.map((entry, i) => (
-          <ChatBubble key={i} role={entry.role} text={entry.text} />
-        ))}
+      {/* Chat history — scrollable region; grows to fill space above the pinned footer */}
+      <div
+        ref={scrollRef}
+        className="flex-1 px-4 py-4 flex flex-col gap-3 overflow-y-auto"
+        style={{ paddingBottom: '0.5rem' }}
+      >
+        {dialogueHistory.map((entry, i) => {
+          // User entry with a physical action prefix (from structured suggested replies)
+          if (entry.role === 'user' && entry.action) {
+            return (
+              <div key={i} className="flex justify-end">
+                <div className="max-w-[80%] flex flex-col gap-0.5">
+                  <p className="text-xs italic px-4 py-1" style={{ color: 'rgba(245,240,232,0.5)' }}>
+                    {entry.action}
+                  </p>
+                  <ChatBubble role="user" text={entry.line ?? entry.text} />
+                </div>
+              </div>
+            )
+          }
+          // NPC entry — render npcAction as scene narration above the speech bubble
+          if (entry.role === 'npc' && entry.npcAction) {
+            return (
+              <div key={i} className="flex flex-col gap-1.5">
+                <p
+                  className="text-xs italic text-center px-6"
+                  style={{ color: 'rgba(245,240,232,0.42)', lineHeight: '1.5' }}
+                >
+                  {entry.npcAction}
+                </p>
+                <ChatBubble role="npc" text={entry.text} />
+              </div>
+            )
+          }
+          // Plain entry (no action)
+          return <ChatBubble key={i} role={entry.role} text={entry.text} />
+        })}
         {npcTyping && (
           <div className="flex justify-start px-1">
             <div
@@ -328,14 +462,23 @@ export default function DialogueScreen() {
         )}
       </div>
 
-      {/* Input area */}
-      <div className="px-4 pb-6 pt-2 flex flex-col gap-3 border-t border-white/10">
+      {/* ── Input area — sticky footer, always pinned to bottom of viewport ── */}
+      <div
+        className="flex-shrink-0 px-4 pb-6 pt-3 flex flex-col gap-3 border-t border-white/10"
+        style={{
+          position: 'sticky',
+          bottom: 0,
+          zIndex: 10,
+          backgroundColor: 'rgba(10,12,28,0.35)',
+          backdropFilter: 'blur(12px)',
+        }}
+      >
         {conversationEnded ? (
           /* ── End-of-conversation CTA ── */
           <button
             onClick={() => navigate('/ending')}
             className="w-full py-3 rounded-2xl text-sm font-semibold transition-opacity"
-            style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
+            style={{ backgroundColor: '#D4A574', color: '#1A1B3A' }}
           >
             {t('dialogue.seeHowItWent')}
           </button>
@@ -370,20 +513,27 @@ export default function DialogueScreen() {
                 ) : (
                   <>
                     <span style={{ fontSize: '0.75rem' }}>💡</span>
-                    <span>{ t('dialogue.needSuggestion') }</span>
+                    <span>{t('dialogue.needSuggestion')}</span>
                   </>
                 )}
               </button>
 
+              {/* End early — styled as a secondary button so it's clearly discoverable */}
               <button
                 onClick={() => navigate('/results')}
-                className="text-xs text-teal-chrome opacity-50 hover:opacity-80"
+                className="flex items-center gap-1 text-xs px-3 py-1.5 rounded-full transition-opacity hover:opacity-90"
+                style={{
+                  backgroundColor: 'rgba(245,240,232,0.07)',
+                  color: 'rgba(245,240,232,0.70)',
+                  border: '1px solid rgba(245,240,232,0.18)',
+                }}
               >
                 {t('dialogue.endEarly')}
               </button>
             </div>
           </>
         )}
+      </div>
       </div>
     </div>
   )

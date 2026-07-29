@@ -12,15 +12,15 @@ import { callLLM } from '../lib/llmClient.js'
 // 60+   → warm coral-amber (connection)
 function moodToOverlay(mood) {
   if (mood >= 60) {
-    // warm coral glow
-    return 'radial-gradient(ellipse at 50% 30%, rgba(255,139,94,0.28) 0%, rgba(26,27,58,0) 70%)'
+    // warm sand glow
+    return 'radial-gradient(ellipse at 50% 30%, rgba(212,165,116,0.28) 0%, rgba(26,29,41,0) 70%)'
   }
   if (mood <= 35) {
     // cool teal tinge
-    return 'radial-gradient(ellipse at 50% 30%, rgba(78,205,196,0.18) 0%, rgba(26,27,58,0) 70%)'
+    return 'radial-gradient(ellipse at 50% 30%, rgba(78,205,196,0.18) 0%, rgba(26,29,41,0) 70%)'
   }
   // neutral — soft amber
-  return 'radial-gradient(ellipse at 50% 30%, rgba(255,195,94,0.18) 0%, rgba(26,27,58,0) 70%)'
+  return 'radial-gradient(ellipse at 50% 30%, rgba(255,195,94,0.18) 0%, rgba(26,29,41,0) 70%)'
 }
 
 export default function EndingScreen() {
@@ -102,7 +102,7 @@ export default function EndingScreen() {
 
   // ── Outcome label ─────────────────────────────────────────────────────────
   const outcomeLabel =
-    outcome === 'positive' ? { text: t('ending.outcomes.positive'), color: '#FF8B5E' } :
+    outcome === 'positive' ? { text: t('ending.outcomes.positive'), color: '#D4A574' } :
     outcome === 'negative' ? { text: t('ending.outcomes.negative'), color: '#4ECDC4' } :
                              { text: t('ending.outcomes.neutral'),  color: '#F5C26B' }
 
@@ -162,7 +162,7 @@ export default function EndingScreen() {
               <button
                 onClick={() => setRetryCount(c => c + 1)}
                 className="text-xs font-semibold px-4 py-1.5 rounded-full transition-opacity hover:opacity-80"
-                style={{ backgroundColor: '#FF8B5E22', color: '#FF8B5E', border: '1px solid #FF8B5E44' }}
+                style={{ backgroundColor: '#D4A57422', color: '#D4A574', border: '1px solid #D4A57444' }}
               >
                 {t('tryAgain')}
               </button>
@@ -177,15 +177,29 @@ export default function EndingScreen() {
           )}
         </div>
 
-        {/* CTA — only shown when epilogue is ready (or on error) */}
+        {/* CTAs — only shown when epilogue is ready (or on error) */}
         {(!isLoading) && (
-          <button
-            onClick={() => navigate('/results')}
-            className="mt-4 w-full max-w-xs py-3.5 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-90"
-            style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
-          >
-            {t('ending.seeResults')}
-          </button>
+          <div className="flex flex-col items-center gap-3 w-full max-w-xs mt-4">
+            <button
+              onClick={() => navigate('/results')}
+              className="w-full py-3.5 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-90"
+              style={{ backgroundColor: '#D4A574', color: '#1A1D29' }}
+            >
+              {t('ending.seeResults')}
+            </button>
+            <button
+              onClick={() => navigate('/')}
+              className="w-full py-3 rounded-2xl text-sm font-semibold transition-opacity hover:opacity-80"
+              style={{
+                backgroundColor: 'transparent',
+                color: '#F5F0E8',
+                border: '1px solid rgba(245,240,232,0.2)',
+                opacity: 0.75,
+              }}
+            >
+              {lang === 'zh' ? '返回主页' : 'Back to Home'}
+            </button>
+          </div>
         )}
 
         {/* Skip while loading */}

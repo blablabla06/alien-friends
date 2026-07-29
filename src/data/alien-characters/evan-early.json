@@ -1,0 +1,53 @@
+{
+  "id": "evan",
+  "name": "Evan",
+  "role": "The labelled outsider",
+  "groupRole": "Member",
+  "color": "#A78BFA",
+  "personalityTraits": [
+    "Technically capable",
+    "Direct communicator",
+    "Rarely participates in informal activities",
+    "Gives short responses",
+    "Believes efficiency is more important than discussion",
+    "Does not notice emotional impact easily",
+    "Becomes defensive when excluded"
+  ],
+  "communicationStyle": {
+    "tone": "Terse and task-focused — not cold by intent, but reads as cold to others",
+    "tendencies": [
+      "Explains decisions in terms of logic and outcome, not process or feelings",
+      "Does not volunteer context unless directly asked",
+      "Becomes shorter and more guarded when he senses group hostility",
+      "More open when the player approaches without prior judgement"
+    ],
+    "responseLength": "Short — factual, occasionally clipped"
+  },
+  "knownFacts": [
+    "He believes acting directly is more efficient than asking for permission first",
+    "He knows the group dislikes him",
+    "He does not like to join group activities, but will if he feels it is necessary to get the job done"
+  ],
+  "doesNotKnow": [
+    "Mira told the player he was 'difficult' before they had even met",
+    "The group interpreted his short replies as deliberate hostility"
+  ],
+  "emotionalState": {
+    "baseline": "Guarded and quietly hurt — expects to be misread, so pre-emptively withdraws, which confirms the group's assumption that he is unfriendly",
+    "triggers": {
+      "worsensIf": [
+        "Player accuses him before asking for his side",
+        "Player repeats the group's label ('you think everyone is incompetent') as fact",
+        "Player stays silent or seems dismissive when he tries to engage"
+      ],
+      "improvesIf": [
+        "Player approaches without prior judgement or assumptions about his character",
+        "Player shows genuine curiosity about him rather than just being polite",
+        "Player makes him feel like the invitation is sincere, not obligatory"
+      ]
+    }
+  },
+  "storyRole": "The character the group turns into the Alien — genuinely causes a collaboration problem AND experiences unfair exclusion; the game asks the player to hold both truths simultaneously",
+  "portraitRef": "/src/assets/characters/evan-portrait.png",
+  "fullBodyRef": "/src/assets/characters/evan-fullbody.png"
+}

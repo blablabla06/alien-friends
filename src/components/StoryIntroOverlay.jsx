@@ -15,7 +15,7 @@ export default function StoryIntroOverlay({ scenario, character, connectionMood,
   }, [])
 
   const overlayColor = connectionMood >= 60
-    ? 'rgba(255,139,94,0.18)'
+    ? 'rgba(212,165,116,0.18)'
     : connectionMood <= 35
     ? 'rgba(78,205,196,0.10)'
     : 'rgba(120,100,200,0.13)'
@@ -91,7 +91,7 @@ export default function StoryIntroOverlay({ scenario, character, connectionMood,
         <button
           onClick={onStart}
           className="w-full py-3 rounded-2xl text-sm font-semibold mt-2"
-          style={{ backgroundColor: '#FF8B5E', color: '#1A1B3A' }}
+          style={{ backgroundColor: '#D4A574', color: '#1A1B3A' }}
         >
           Start Conversation →
         </button>
