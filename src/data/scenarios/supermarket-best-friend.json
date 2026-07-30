@@ -2,18 +2,19 @@
   "id": "supermarket-best-friend",
   "title": { "en": "Supermarket Run-In", "zh": "超市偶遇" },
   "category": "falling-out",
-  "difficultyTier": "hard",
   "npcRef": "old-best-friend",
-  "locationRef": "Supermarket cereal aisle, Saturday afternoon. Trolleys, tinny overhead music, no privacy.",
+  "locationRef": {
+    "en": "Supermarket frozen aisle, Saturday afternoon. Trolleys, tiny overhead music.",
+    "zh": "超市冷冻货架，周六下午。购物车、超市背景音乐声。"
+  },
   "backgroundImage": "/assets/backgrounds/supermarket.png",
-  "setup": "You haven't spoken to Jordan in two years after a serious falling-out. Neither of you expected this.",
   "storyPlot": {
     "en": "Jordan used to be your closest friend — the person you called first, the person who knew things about you that no one else did. Then something happened between you. Not one thing, exactly, but a sequence of things that accumulated until one conversation went badly wrong, and after that, silence. You've replayed it enough times to have lost track of whose fault it actually was. You've gone two years without contact: no texts, no overlapping social plans, nothing. You came to the supermarket today for milk and bread. You turned into the cereal aisle and there he was — Jordan, trolley in hand, close enough that neither of you can pretend not to have seen the other.",
     "zh": "乔丹曾是你最亲近的朋友——你第一个打电话的那个人，那个知道你不会告诉任何人的秘密的人。然后你们之间发生了一些事。不是某一件具体的事，而是一连串积累起来的事，直到有一次谈话彻底崩了，之后便是沉默。你反复回放过那些场景，已经分不清到底是谁的错。两年里你们没有任何联系：没有短信，没有交集，什么都没有。今天你来超市只是为了买牛奶和面包。你转进麦片货架那条通道，他就在那里——乔丹，手推着购物车，近得两个人都没办法假装没看见对方。"
   },
   "openingLine": {
     "en": "Jordan freezes when he sees you. A long beat of silence. He grips the trolley. \"Oh. Hi.\"",
-    "zh": "乔丹看见你时整个人僵住了。漫长的沉默。他握紧了购物车。「哦。你好。」"
+    "zh": "乔丹看见你时整个人僵住了。漫长的沉默。他握紧了购物车。\"哦。你好。\""
   },
   "successCondition": "Composite score ≥ 75 and at least one hidden layer revealed",
   "failureCondition": "Composite score < 40 OR Jordan says goodbye and walks away before maxTurns",

@@ -117,12 +117,12 @@ export default function ScenarioIntroPage() {
           >
             {t('back')}
           </button>
-          <span
+          {/* <span
             className="text-xs font-semibold uppercase tracking-widest px-3 py-1 rounded-full"
             style={{ backgroundColor: 'rgba(255,255,255,0.08)', color: '#8A8FA3' }}
           >
             {t(`select.tierLabels.${scenario.difficultyTier}`)}
-          </span>
+          </span> */}
         </div>
 
         {/* ── Title + location ── */}
@@ -134,7 +134,7 @@ export default function ScenarioIntroPage() {
             {title}
           </h1>
           <p className="text-xs italic mt-1" style={{ color: '#F5F0E8', opacity: 0.45 }}>
-            {scenario.locationRef}
+            {resolveField(scenario.locationRef, lang)}
           </p>
         </div>
 

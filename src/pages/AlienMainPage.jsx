@@ -175,7 +175,7 @@ const SCENES = [
     speaker: 'evan',
     background: bgPerspective,
     line: 'I saw the numbers were inconsistent. The deadline was tomorrow. I thought fixing it directly was better than waiting.',
-    narration: 'From Evan\'s side, he was not invited to lunch, did not know Daniel rehearsed the old slide, and already expected the group to judge him.',
+    narration: 'From Evan\'s side, he did not know Daniel rehearsed the old slide, and already expected the group to judge him.',
     objective: 'Understanding missing context does not erase impact. Decide what to ask next.',
     perspective: true,
     fact: 'Missing context: Evan corrected a real error.',
@@ -218,11 +218,71 @@ function deriveStateDeltasFromScore(scoreResult) {
   // High clarity/awareness → less label power and rumour
   // High respect → less tension, more evanTrust
   // High boundary → less tension
-  const labelPower = Math.round((50 - awareness) * 0.4 + (50 - clarity) * 0.2)
-  const rumour     = Math.round((50 - clarity)   * 0.4 + (50 - awareness) * 0.2)
-  const tension    = Math.round((50 - respect)   * 0.3 + (50 - boundary)  * 0.3)
-  const evanTrust  = Math.round((respect - 50)   * 0.4 + (awareness - 50) * 0.3)
+  //
+  // Scale factor 0.06 keeps per-turn deltas gentle (max ~±3 per dimension)
+  // so hidden state changes meaningfully over 18 turns rather than saturating
+  // after the first chapter. Full formula before scaling would be:
+  //   labelPower raw ≈ (50-awareness)*0.4 + (50-clarity)*0.2  → max ±30
+  //   After ×0.06 → max ±1.8, rounded → ±2 per turn.
+  const SCALE = 0.06
+  const labelPower = Math.round(((50 - awareness) * 0.4 + (50 - clarity)   * 0.2) * SCALE)
+  const rumour     = Math.round(((50 - clarity)   * 0.4 + (50 - awareness) * 0.2) * SCALE)
+  const tension    = Math.round(((50 - respect)   * 0.3 + (50 - boundary)  * 0.3) * SCALE)
+  const evanTrust  = Math.round(((respect - 50)   * 0.4 + (awareness - 50) * 0.3) * SCALE)
   return { labelPower, rumour, tension, evanTrust }
+}
+
+/**
+ * Returns a bilingual NPC "thinking pause" fallback line used whenever the
+ * real NPC response cannot be recovered (timeout, parse failure, plain-narrative
+ * fallback, LLM error).  Centralised here so every code path uses the same text.
+ */
+function getFallbackNpcText(characterName, lang) {
+  return lang === 'zh'
+    ? `${characterName}停顿了一下，似乎在思考你说的话。`
+    : `${characterName} pauses, considering your words.`
+}
+
+/**
+ * Last-resort fallback: model abandoned JSON entirely and returned free narrative prose.
+ *
+ * Parsing order (important — prevents bracket/quote content from interfering):
+ *   1. Extract all parenthetical segments （…）/ (…) → npcAction
+ *   2. Strip those segments from the text
+ *   3. In the remaining text, extract double-quoted "…" or paired single-quoted '…'
+ *      spans as spoken dialogue → npcResponse
+ *   4. If no quotes found, the whole remaining text is the dialogue
+ *
+ * Single-quote handling: a pair of single quotes surrounding ≥1 character is
+ * treated as a dialogue delimiter. Apostrophes in contractions (don't, I'm) are
+ * naturally excluded because they are never balanced pairs around a phrase.
+ */
+function extractFromPlainNarrative(raw) {
+  // Step 1 & 2: extract bracket content as actions, remove from text
+  const actionMatches = [...raw.matchAll(/[（(]([^）)]+)[）)]/g)].map(m => m[1])
+  const combinedAction = actionMatches.length ? actionMatches.join(' ') : null
+  const withoutActions = raw.replace(/[（(][^）)]+[）)]/g, '').trim()
+
+  // Step 3: collect double-quoted and paired single-quoted spans
+  // Double-quote: "…"
+  // Single-quote: only treat as dialogue delimiter when the opening ' is NOT
+  //   immediately preceded by a word character (i.e. not a contraction apostrophe
+  //   like don't / I'm).  Uses a lookbehind (?<!\w) for the opening quote and
+  //   requires at least 2 characters inside to skip lone apostrophes.
+  const quoteRe = /"([^"]+)"|(?<!\w)'([^']{2,})'/g
+  const quoteMatches = []
+  let m
+  while ((m = quoteRe.exec(withoutActions)) !== null) {
+    const spoken = (m[1] ?? m[2]).trim()
+    if (spoken) quoteMatches.push(spoken)
+  }
+
+  // Step 4: join quoted spans, or fall back to entire remaining text
+  const dialogue = quoteMatches.length > 0
+    ? quoteMatches.join(' ')
+    : withoutActions || raw.trim()
+
+  return { npcResponse: dialogue, npcAction: combinedAction }
 }
 
 function parseAlienNpcJson(raw) {
@@ -231,6 +291,14 @@ function parseAlienNpcJson(raw) {
 
   // Strip markdown code fences (```json ... ``` or ``` ... ```)
   text = text.replace(/^```json\s*/i, '').replace(/^```\s*/i, '').replace(/```\s*$/, '').trim()
+
+  // ── Plain-narrative fallback: no '{' at all means model abandoned JSON entirely ──
+  // Check BEFORE attempting any JSON extraction. Salvage real AI response rather
+  // than falling back to generic placeholder text.
+  if (!text.includes('{')) {
+    console.warn('[parseAlienNpcJson] No JSON structure detected — model returned plain narrative. Extracting via plain-narrative fallback.')
+    return extractFromPlainNarrative(text)
+  }
 
   // Extract the outermost {...} block
   const first = text.indexOf('{')
@@ -445,12 +513,15 @@ export default function AlienMainPage() {
   )
 
   // ── dialogue history for the NPC prompt (from chapterMessages) ───────────
-  // Converts the live chapterMessages array into the {role, text} format
-  // expected by buildAlienNpcPrompt.
+  // Converts the live chapterMessages array into the {role, text, action} format
+  // expected by buildAlienNpcPrompt. action is preserved so that the prompt
+  // builder can reconstruct a proper JSON assistant message (avoiding the
+  // "bad example" effect where a plain-text history message teaches the model
+  // to skip the JSON wrapper on subsequent turns).
   const currentSceneHistory = useMemo(() => {
     return chapterMessages
       .filter(m => m.role === 'npc' || m.role === 'user')
-      .map(m => ({ role: m.role, text: m.text }))
+      .map(m => ({ role: m.role, text: m.text, action: m.action ?? null }))
   }, [chapterMessages])
 
   // ── persist to localStorage on every relevant state change ──────────────
@@ -578,18 +649,25 @@ export default function AlienMainPage() {
     setInitLoading(true)
 
     // Fallback suggestions used when the fetch times out, errors, or returns unusable JSON
-    const fallbackSuggestions = [
-      { line: 'Can you tell me more about what happened?', style: 'clarifying' },
-      { line: "I hear you — that sounds really frustrating.", style: 'warm' },
-      { line: "Let's try to figure this out together.", style: 'direct' },
-    ]
+    // Bilingual — always matches the current game language so fallback text is never mismatched
+    const fallbackSuggestions = lang === 'zh'
+      ? [
+          { line: '能跟我说说发生了什么吗？', style: 'clarifying' },
+          { line: '听起来真的很让人沮丧。', style: 'warm' },
+          { line: '我们一起想办法解决吧。', style: 'direct' },
+        ]
+      : [
+          { line: 'Can you tell me more about what happened?', style: 'clarifying' },
+          { line: "I hear you — that sounds really frustrating.", style: 'warm' },
+          { line: "Let's try to figure this out together.", style: 'direct' },
+        ]
 
-    // 12-second timeout — same timedOut flag pattern as handleTurn
+    // 20-second timeout — raised from 12 s to match handleTurn and avoid premature fallback
     let timedOut = false
     const timeoutId = setTimeout(() => {
       timedOut = true
       controller.abort()
-    }, 12_000)
+    }, 20_000)
 
     try {
       // For Evan in the lunch scene, use the pre-slides character definition
@@ -602,13 +680,24 @@ export default function AlienMainPage() {
       const npcMessages    = buildAlienNpcPrompt(
         charJson, scene, seedHistory, '__SUGGESTIONS_ONLY__', hidden, isPerspective, lang, false, sceneIndex,
       )
-      // Patch the last user message to ask for suggestions only
+      // Patch the last user message to ask for suggestions only.
+      // The instruction is bilingual — it must match lang so the model produces
+      // replies in the correct language even before the player has typed anything.
+      const seedPromptContent = lang === 'zh'
+        ? `NPC刚刚说了："${scene.line}"\n请生成三条玩家接下来可以说的建议回复。` +
+          `必须用简体中文写每条建议的文字。` +
+          `只返回包含 suggestedReplies 的 JSON，npcResponse 设为空字符串 ""。`
+        : `The NPC just said: "${scene.line}"\nGenerate the three suggested replies the player could say next. ` +
+          `Return ONLY the JSON with suggestedReplies — npcResponse should be an empty string "".`
       const patchedMessages = npcMessages.map((m, i) =>
         i === npcMessages.length - 1
-          ? { ...m, content: `The NPC just said: "${scene.line}"\nGenerate the three suggested replies the player could say next. Return ONLY the JSON with suggestedReplies — npcResponse should be an empty string "".` }
+          ? { ...m, content: seedPromptContent }
           : m,
       )
+      // ── Timing diagnostic: measure actual LLM round-trip for initial suggestions ──
+      const _suggStartTime = Date.now()
       const result = await callLLM(patchedMessages, controller.signal)
+      console.log(`[AlienMainPage] fetchInitialSuggestions took ${Date.now() - _suggStartTime}ms (scene: ${scene.id}, lang: ${lang})`)
       clearTimeout(timeoutId)
       if (controller.signal.aborted) {
         // Only apply fallback if it was OUR timeout, not a superseded stale call
@@ -754,6 +843,85 @@ export default function AlienMainPage() {
     const nextTurnCount = turnCount + 1
     const isFinalTurn   = nextTurnCount >= MAX_TURNS_PER_CHAPTER
 
+    // Generic bilingual fallback replies — used whenever suggestedReplies cannot be
+    // extracted from the model response (plain-narrative fallback, timeout, parse failure).
+    // Only meaningful on non-final turns; final turn never needs suggestions.
+    // Randomly sample 3 from a pool of 6 so the player doesn't see identical options
+    // every time the fallback fires.
+    const genericFallbackReplies = (() => {
+      if (isFinalTurn) return []
+      const pool = lang === 'zh'
+        ? [
+            { text: '能再多说说吗？', style: 'clarifying' },
+            { text: '我明白你的意思了。', style: 'warm' },
+            { text: '那我们该怎么办？', style: 'direct' },
+            { text: '你现在感觉怎么样？', style: 'warm' },
+            { text: '我想更了解你的想法。', style: 'clarifying' },
+            { text: '我们可以一起想想办法。', style: 'direct' },
+          ]
+        : [
+            { text: 'Can you tell me more about that?', style: 'clarifying' },
+            { text: 'I understand what you mean.', style: 'warm' },
+            { text: 'So what should we do next?', style: 'direct' },
+            { text: 'How are you feeling about this?', style: 'warm' },
+            { text: "I'd like to understand your perspective better.", style: 'clarifying' },
+            { text: "Let's figure this out together.", style: 'direct' },
+          ]
+      // Fisher-Yates shuffle, take first 3
+      const shuffled = [...pool]
+      for (let i = shuffled.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]]
+      }
+      return shuffled.slice(0, 3)
+    })()
+
+    // ── Fallback suggestions patch-up ─────────────────────────────────────────
+    // When the main NPC response came back as plain-narrative (no JSON wrapper),
+    // suggestedReplies will be missing. Before giving up on AI-generated suggestions,
+    // we fire one lightweight "suggestions only" request, reusing the same prompt
+    // structure as fetchInitialSuggestions but scoped to the player's actual message.
+    // Timeout: 7 s — short enough that a failure doesn't visibly delay the turn.
+    const fetchFallbackSuggestions = async (currentPlayerText) => {
+      const suggController = new AbortController()
+      const suggTimeoutId  = setTimeout(() => suggController.abort(), 7_000)
+      try {
+        const charJson      = (scene.id === 'lunch' && scene.speaker === 'evan') ? evanEarlyJson : speaker.json
+        const isPerspective = scene.perspective === true
+        const baseMessages  = buildAlienNpcPrompt(
+          charJson, scene, currentSceneHistory, currentPlayerText,
+          hidden, isPerspective, lang, false, sceneIndex,
+        )
+        const patchContent = lang === 'zh'
+          ? `玩家刚刚说了："${currentPlayerText}"\n请根据对话上下文，生成三条玩家接下来可以说的建议回复。` +
+            `必须用简体中文写每条建议的文字。` +
+            `只返回包含 suggestedReplies 的 JSON，npcAction 和 npcResponse 均设为空字符串 ""。`
+          : `The player just said: "${currentPlayerText}"\nBased on the conversation so far, generate three suggested replies the player could say next. ` +
+            `Return ONLY the JSON with suggestedReplies — set npcAction and npcResponse to empty strings "".`
+        const patchedMessages = baseMessages.map((m, i) =>
+          i === baseMessages.length - 1 ? { ...m, content: patchContent } : m,
+        )
+        const _t0     = Date.now()
+        const result  = await callLLM(patchedMessages, suggController.signal)
+        clearTimeout(suggTimeoutId)
+        console.log(`[AlienMainPage] fetchFallbackSuggestions took ${Date.now() - _t0}ms`)
+        if (result.ok) {
+          const parsed = parseAlienNpcJson(result.text)
+          if (Array.isArray(parsed?.suggestedReplies) && parsed.suggestedReplies.length) {
+            console.log('[AlienMainPage] fetchFallbackSuggestions: AI suggestions retrieved successfully.')
+            return parsed.suggestedReplies
+          }
+        }
+      } catch (err) {
+        clearTimeout(suggTimeoutId)
+        if (err?.name !== 'AbortError') {
+          console.warn('[AlienMainPage] fetchFallbackSuggestions error:', err?.message)
+        }
+      }
+      console.warn('[AlienMainPage] fetchFallbackSuggestions failed or timed out — using genericFallbackReplies.')
+      return null  // caller will substitute genericFallbackReplies
+    }
+
     // timedOut distinguishes "our own 18s timeout fired" from "a newer turn aborted this stale one".
     // Only when timedOut=true must we still call completeTurn() so the UI always unfreezes.
     let timedOut = false
@@ -784,8 +952,8 @@ export default function AlienMainPage() {
           // catch internally), but the results are stale. Must still complete the turn so the
           // UI never freezes.
           console.warn('[AlienMainPage] Turn timed out (resolved path), using neutral fallback.')
-          const fallbackText = `${speaker.name} pauses, considering your words.`
-          completeTurn(playerText, fallbackText, fallbackText, null, [], FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta)
+          const fallbackText = getFallbackNpcText(speaker.name, lang)
+          completeTurn(playerText, fallbackText, fallbackText, null, genericFallbackReplies, FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta)
         }
         // timedOut === false → a newer turn aborted this stale call — return silently.
         return
@@ -796,10 +964,23 @@ export default function AlienMainPage() {
       let npcAction            = null
       let nextSuggestedReplies = []
       if (npcResult.ok) {
+        console.log(`[DEBUG] Turn ${turnCount + 1} raw npcResult.text:`, npcResult.text)
+        console.log(`[DEBUG] Turn ${turnCount + 1} nextSuggestedReplies:`, nextSuggestedReplies)
+
         const parsed         = parseAlienNpcJson(npcResult.text)
         const rawResponse    = parsed?.npcResponse ?? null
         const rawAction      = parsed?.npcAction   ?? null
-        nextSuggestedReplies = Array.isArray(parsed?.suggestedReplies) ? parsed.suggestedReplies : []
+        // If suggestedReplies is present in the parsed JSON, use them directly.
+        // Otherwise, try one lightweight AI patch-up request (fetchFallbackSuggestions)
+        // before falling back to the randomised generic pool.
+        // fetchFallbackSuggestions is skipped on final turns (no suggestions needed).
+        if (Array.isArray(parsed?.suggestedReplies) && parsed.suggestedReplies.length) {
+          nextSuggestedReplies = parsed.suggestedReplies
+        } else if (!isFinalTurn) {
+          console.warn(`[AlienMainPage] Turn ${turnCount + 1}: suggestedReplies missing — attempting AI patch-up request.`)
+          const aiSuggestions = await fetchFallbackSuggestions(playerText)
+          nextSuggestedReplies = aiSuggestions ?? genericFallbackReplies
+        }
 
         // Defensively split any narration that leaked into npcResponse.
         if (rawResponse) {
@@ -839,6 +1020,8 @@ export default function AlienMainPage() {
             console.log('[AlienMainPage] FINAL TURN salvage parse succeeded:', npcReaction)
           }
         }
+      }else{
+        console.log(`[DEBUG] Turn ${turnCount + 1} raw npcResult.text:`, npcResult.text)
       }
 
       // If npcReaction is still null for any reason (ok:false with no salvageable body,
@@ -846,15 +1029,33 @@ export default function AlienMainPage() {
       // This guarantees an NPC bubble always appears before completeTurn() fires.
       if (!npcReaction) {
         console.warn(`[AlienMainPage] npcReaction null after all attempts — scene: ${scene.id}, isFinalTurn: ${isFinalTurn}. Using fallback.`)
-        npcReaction = `${speaker.name} pauses, considering your words.`
+        npcReaction = getFallbackNpcText(speaker.name, lang)
       }
 
+      // ── DIAGNOSTIC: log full scoreResult every turn ──────────────────────
+      console.group(`[AlienMainPage] scoreResult — scene: ${scene.id}, turn: ${turnCount + 1}/${MAX_TURNS_PER_CHAPTER}`)
+      console.log('isHeuristic (fallback?):', scoreResult.isHeuristic ?? false)
+      console.log('scoreResult:', JSON.stringify(scoreResult, null, 2))
+      console.log('scores BEFORE delta:', JSON.stringify(scores))
+      console.log('hidden BEFORE delta:', JSON.stringify(hidden))
+      console.groupEnd()
+
       // Score deltas
+      // LLM returns absolute quality values (0-100). We scale them into gentle
+      // per-turn deltas so scores accumulate meaningfully over 3 turns × 6 chapters
+      // rather than hitting the 0/100 ceiling in the first chapter.
+      //
+      // Formula: delta = round((absolute - 50) * 0.15)
+      //   • A perfect turn (100) contributes +7.5 → rounds to +8
+      //   • A neutral turn (50) contributes ±0
+      //   • A poor turn (10) contributes −6
+      // Starting from BASE_SCORES (~48), it takes ~4 "perfect" turns to reach 80.
+      const DELTA_SCALE = 0.15
       const scoreDeltas = scoreResult.composite !== undefined ? {
-        clarity:   scoreResult.clarity   - 50,
-        respect:   scoreResult.respect   - 50,
-        awareness: scoreResult.awareness - 50,
-        boundary:  scoreResult.boundary  - 50,
+        clarity:   Math.round((scoreResult.clarity   - 50) * DELTA_SCALE),
+        respect:   Math.round((scoreResult.respect   - 50) * DELTA_SCALE),
+        awareness: Math.round((scoreResult.awareness - 50) * DELTA_SCALE),
+        boundary:  Math.round((scoreResult.boundary  - 50) * DELTA_SCALE),
       } : FALLBACK_SCORE_DELTAS
 
       const stateDeltas = scoreResult.composite !== undefined
@@ -862,7 +1063,7 @@ export default function AlienMainPage() {
         : FALLBACK_STATE_DELTAS
 
       const feedback = scoreResult.feedback?.trim()
-        || `${speaker.name} pauses, considering your words.`
+        || getFallbackNpcText(speaker.name, lang)
 
       completeTurn(playerText, feedback, npcReaction, npcAction, nextSuggestedReplies, scoreDeltas, stateDeltas, isFinalTurn, replyMeta)
 
@@ -871,11 +1072,11 @@ export default function AlienMainPage() {
       if (timedOut) {
         // Our own timeout fired — must complete the turn so the UI always unfreezes.
         console.warn('[AlienMainPage] Turn timed out, using neutral fallback.')
-        const fallbackText = `${speaker.name} pauses, considering your words.`
+        const fallbackText = getFallbackNpcText(speaker.name, lang)
         completeTurn(
           playerText,
           fallbackText,
-          fallbackText, null, [], FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta,
+          fallbackText, null, genericFallbackReplies, FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta,
         )
         return
       }
@@ -893,11 +1094,11 @@ export default function AlienMainPage() {
       console.error('  full err object:', err)
 
       console.warn('[AlienMainPage] LLM error, using neutral fallback:', err)
-      const fallbackText = `${speaker.name} pauses, considering your words.`
+      const fallbackText = getFallbackNpcText(speaker.name, lang)
       completeTurn(
         playerText,
         fallbackText,
-        fallbackText, null, [], FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta,
+        fallbackText, null, genericFallbackReplies, FALLBACK_SCORE_DELTAS, FALLBACK_STATE_DELTAS, isFinalTurn, replyMeta,
       )
     }
   }, [completeTurn, scene, speaker, currentSceneHistory, hidden, lang, turnCount])
@@ -1297,6 +1498,13 @@ export default function AlienMainPage() {
                   onChange={event => setFinalText(event.target.value)}
                   placeholder={ui.finalPlaceholder || 'Type your response...'}
                   disabled={isLoading}
+                  onKeyDown={event => {
+                    if (event.key === 'Enter' && !event.shiftKey) {
+                      if (isLoading || awaitingChapterAdvance || !finalText.trim()) return
+                      event.preventDefault()
+                      submitCustomText()
+                    }
+                  }}
                 />
                 <button
                   className="af-primary-button"

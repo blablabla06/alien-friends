@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useReducer } from 'react'
-import { loadProgress, saveProgress } from '../lib/persistence.js'
+import { loadProgress, saveProgress, saveActiveSession, clearActiveSession } from '../lib/persistence.js'
 import { generateMissionsForDate, tickMissions, todayKey } from '../lib/dailyMissions.js'
 
 // ─── initial state ────────────────────────────────────────────────────────────
@@ -155,7 +155,22 @@ function reducer(state, action) {
       }
     }
 
+    case 'RESTORE_SESSION':
+      // Re-hydrate all active-dialogue fields from a saved ActiveSession snapshot.
+      return {
+        ...state,
+        currentScenario:  action.session.scenario,
+        currentCharacter: action.session.character,
+        dialogueHistory:  action.session.dialogueHistory  ?? [],
+        scoringHistory:   action.session.scoringHistory   ?? [],
+        currentScores:    action.session.currentScores    ?? state.currentScores,
+        connectionMood:   action.session.connectionMood   ?? 50,
+        turnCount:        action.session.turnCount        ?? 0,
+        helpUsed:         action.session.helpUsed         ?? 0,
+      }
+
     case 'END_SCENARIO':
+      clearActiveSession()
       return { ...state, currentScenario: null, currentCharacter: null }
 
     // Mark one or more missions complete by ID; also grant XP for each
@@ -238,7 +253,7 @@ const GameStateContext = createContext(null)
 export function GameStateProvider({ children }) {
   const [state, dispatch] = useReducer(reducer, initialState)
 
-  // ── Persist whenever any tracked field changes ──
+  // ── Persist long-term progress whenever tracked fields change ──
   useEffect(() => {
     saveProgress({
       xp:                 state.xp,
@@ -261,8 +276,35 @@ export function GameStateProvider({ children }) {
     state.dailyMissions,
   ])
 
+  // ── Persist active dialogue session so a page refresh can resume it ──
+  // Only written when a scenario is actually in progress; cleared by END_SCENARIO.
+  useEffect(() => {
+    if (!state.currentScenario) return
+    saveActiveSession({
+      scenarioId:     state.currentScenario.id,
+      scenario:       state.currentScenario,
+      character:      state.currentCharacter,
+      dialogueHistory: state.dialogueHistory,
+      scoringHistory:  state.scoringHistory,
+      currentScores:   state.currentScores,
+      connectionMood:  state.connectionMood,
+      turnCount:       state.turnCount,
+      helpUsed:        state.helpUsed,
+    })
+  }, [
+    state.currentScenario,
+    state.currentCharacter,
+    state.dialogueHistory,
+    state.scoringHistory,
+    state.currentScores,
+    state.connectionMood,
+    state.turnCount,
+    state.helpUsed,
+  ])
+
   const actions = {
     startScenario:      (scenario, character) => dispatch({ type: 'START_SCENARIO', scenario, character }),
+    restoreSession:     (session) => dispatch({ type: 'RESTORE_SESSION', session }),
     addDialogueEntry:   (entry)  => dispatch({ type: 'ADD_DIALOGUE_ENTRY', entry }),
     addScoreEntry:      (entry)  => dispatch({ type: 'ADD_SCORE_ENTRY', entry }),
     updateScores:       (scores) => dispatch({ type: 'UPDATE_SCORES', scores }), // legacy alias

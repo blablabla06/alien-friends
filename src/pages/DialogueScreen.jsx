@@ -75,7 +75,7 @@ export default function DialogueScreen() {
 
     const { cleanDialogue: openingDialogue, combinedNarration: openingNarration } =
       extractCleanDialogue(resolveField(scenario.openingLine, lang), null)
-    actions.addDialogueEntry({
+      actions.addDialogueEntry({
       role:      'npc',
       text:      openingDialogue,
       npcAction: openingNarration,
@@ -404,20 +404,11 @@ export default function DialogueScreen() {
         </div>
       )}
 
-      {/* Scene-setting caption — shown once above the chat, not a bubble */}
-      {scenario.setup && (
-        <div className="mx-4 mt-4 mb-1 px-4 py-2.5 rounded-xl border border-white/10 bg-white/5 text-center">
-          <p className="text-xs italic leading-relaxed" style={{ color: '#F5F0E8', opacity: 0.55 }}>
-            {resolveField(scenario.setup, lang)}
-          </p>
-        </div>
-      )}
-
       {/* Chat history — scrollable region; grows to fill space above the pinned footer */}
       <div
         ref={scrollRef}
-        className="flex-1 px-4 py-4 flex flex-col gap-3 overflow-y-auto"
-        style={{ paddingBottom: '0.5rem' }}
+        className="dialogue-scroll-area flex-1 px-4 py-4 flex flex-col gap-3 overflow-y-auto"
+        style={{ paddingBottom: '0.5rem', minHeight: 0 }}
       >
         {dialogueHistory.map((entry, i) => {
           // User entry with a physical action prefix (from structured suggested replies)

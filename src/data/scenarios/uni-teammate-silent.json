@@ -2,18 +2,19 @@
   "id": "uni-teammate-silent",
   "title": { "en": "Study Room Check-In", "zh": "自习室关怀" },
   "category": "uni-teammate",
-  "difficultyTier": "medium",
   "npcRef": "uni-teammate",
-  "locationRef": "University study room, 9pm the week before submission. Fluorescent lights, one laptop screen glowing.",
+  "locationRef": {
+    "en": "University study room, 9pm the week before submission, laptop screen glowing.",
+    "zh": "大学自习室，截止日期前一周的晚上9点， 笔记本电脑屏幕发出微光。"
+  },
   "backgroundImage": "/assets/backgrounds/study-room.png",
-  "setup": "Riley is staring at her screen, barely acknowledging you. Her section of the group project is untouched.",
   "storyPlot": {
     "en": "You and Riley have been assigned the same group project for the past three weeks. You don't know each other well — just well enough to split the work and agree on a submission date. That date is less than a week away, and your parts are more or less done. But Riley's section is blank in the shared doc, and she's been going quiet in the group chat. You booked the study room tonight hoping to work, but really, you came because something felt off. Riley is already here when you arrive, laptop open, eyes on the screen, looking like someone holding something together through sheer will alone.",
     "zh": "你和芮利被分到了同一个小组项目，已经合作了三周。你们彼此并不熟——刚好熟到能把任务分一分、定下提交日期。提交日还有不到一周，你的部分基本完成了。但共享文档里芮利负责的那一块还是空白，她在群聊里也越来越沉默。你今晚订了这间自习室，名义上是来工作的，但说实话，是因为你感觉哪里不对劲。芮利已经到了，笔记本电脑开着，眼神盯着屏幕，看起来像一个靠纯粹的意志力撑着自己不崩溃的人。"
   },
   "openingLine": {
     "en": "Riley doesn't look up. \"Hey.\" A pause. \"You don't need to stay if you've got other stuff.\"",
-    "zh": "芮利没有抬头。「嗨。」沉默了一下。「如果你有别的事，不用留下来陪我。」"
+    "zh": "芮利没有抬头。\"嗨。如果你有别的事，不用留下来陪我。\""
   },
   "successCondition": "Composite score ≥ 65 and Riley reveals they haven't started OR accepts help",
   "failureCondition": "Composite score < 35 OR Riley asks you to leave",

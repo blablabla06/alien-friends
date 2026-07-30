@@ -41,12 +41,16 @@ const QUOTE_RE = /"((?:[^"\\]|\\.)*)"/g
  */
 export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   const raw = String(npcResponseRaw ?? '').trim()
+  // ── Step 0: 先剥离括号内容，视为动作 ─────────────────────────────
+  const bracketMatches = [...raw.matchAll(/[（(]([^）)]+)[）)]/g)].map(m => m[1].trim())
+  const bracketAction = bracketMatches.length ? bracketMatches.join(' ') : null
+  const rawWithoutBrackets = raw.replace(/[（(][^）)]+[）)]/g, '').trim()
 
   // ── Step 1: pull out all quoted spoken segments ────────────────────────────
   const quotedSegments = []
   let match
   QUOTE_RE.lastIndex = 0
-  while ((match = QUOTE_RE.exec(raw)) !== null) {
+  while ((match = QUOTE_RE.exec(rawWithoutBrackets)) !== null) {
     const spoken = match[1].trim()
     if (spoken) quotedSegments.push(spoken)
   }
@@ -55,11 +59,11 @@ export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   // (model complied perfectly or returned a simple unquoted string).
   const cleanDialogue = quotedSegments.length > 0
     ? quotedSegments.join(' ')
-    : raw
+    : rawWithoutBrackets
 
   // ── Step 2: collect narration — everything OUTSIDE the quotes ─────────────
   QUOTE_RE.lastIndex = 0
-  const narrationFromResponse = raw
+  const narrationFromResponse = rawWithoutBrackets
     .split(QUOTE_RE)                    // split on every quoted span (captures too)
     .filter((_, idx) => idx % 2 === 0) // even indices = outside-quote segments
     .map(s => s.trim())
@@ -70,6 +74,7 @@ export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   // ── Step 3: merge npcAction + any narration extracted from npcResponse ─────
   const parts = [
     npcActionRaw ? String(npcActionRaw).trim() : null,
+    bracketAction,
     // Only include narration-from-response if there were actually quoted segments
     // (i.e. there was something outside the quotes worth separating out).
     quotedSegments.length > 0 ? narrationFromResponse || null : null,

@@ -117,3 +117,77 @@ export function saveProgress(progress) {
     // Storage quota exceeded or private-mode restriction — fail silently
   }
 }
+
+// ─── Active session persistence ───────────────────────────────────────────────
+// Stores the in-progress dialogue so a page refresh can resume where the player
+// left off, instead of bouncing them back to the home screen.
+// Uses a separate key so it never interferes with the long-term progress data.
+
+const SESSION_KEY = 'alien_friends_active_session'
+
+/** How long (ms) to keep an active session before treating it as stale.
+ *  4 hours — generous enough for a real play session, short enough to avoid
+ *  resurrecting a dialogue the player abandoned days ago. */
+const SESSION_TTL_MS = 4 * 60 * 60 * 1000
+
+/**
+ * @typedef {Object} ActiveSession
+ * @property {string}   scenarioId
+ * @property {object}   scenario          full scenario JSON
+ * @property {object}   character         full character JSON
+ * @property {Array}    dialogueHistory
+ * @property {Array}    scoringHistory
+ * @property {object}   currentScores
+ * @property {number}   connectionMood
+ * @property {number}   turnCount
+ * @property {number}   helpUsed
+ * @property {number}   savedAt           Date.now() when snapshot was written
+ */
+
+/**
+ * Persist the current in-progress dialogue session.
+ * @param {ActiveSession} session
+ */
+export function saveActiveSession(session) {
+  try {
+    localStorage.setItem(SESSION_KEY, JSON.stringify({ ...session, savedAt: Date.now() }))
+  } catch {
+    // Fail silently (quota / private mode)
+  }
+}
+
+/**
+ * Load the active session for a given scenarioId.
+ * Returns null if nothing is stored, the session is expired, or the
+ * scenarioId doesn't match (e.g. the player manually edited the URL).
+ * @param {string} scenarioId
+ * @returns {ActiveSession|null}
+ */
+export function loadActiveSession(scenarioId) {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY)
+    if (!raw) return null
+    const parsed = JSON.parse(raw)
+    // Reject if expired
+    if (!parsed.savedAt || Date.now() - parsed.savedAt > SESSION_TTL_MS) {
+      localStorage.removeItem(SESSION_KEY)
+      return null
+    }
+    // Reject if scenarioId doesn't match
+    if (parsed.scenarioId !== scenarioId) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+/**
+ * Remove the stored active session (call on scenario end / results screen).
+ */
+export function clearActiveSession() {
+  try {
+    localStorage.removeItem(SESSION_KEY)
+  } catch {
+    // Fail silently
+  }
+}

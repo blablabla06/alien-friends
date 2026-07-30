@@ -13,3 +13,44 @@ body {
 #root {
   min-height: 100vh;
 }
+
+/* ── Dialogue screen scroll area ─────────────────────────────────────────── */
+/* Firefox */
+.dialogue-scroll-area {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(40, 42, 50, 0.55) transparent;
+}
+
+/* WebKit (Chrome, Safari, Edge) */
+.dialogue-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+
+.dialogue-scroll-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dialogue-scroll-area::-webkit-scrollbar-thumb {
+  background-color: rgba(40, 42, 50, 0.55);
+  border-radius: 9999px;
+}
+
+/* Global scrollbar styling — matches dialogue/main game scroll areas */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(40, 42, 50, 0.35) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: rgba(40, 42, 50, 0.35);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(40, 42, 50, 0.35);
+}

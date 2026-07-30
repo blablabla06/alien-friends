@@ -103,7 +103,7 @@ export const storyUi = {
     label: '标签',
     rumour: '谣言',
     tension: '紧张',
-    evanTrust: 'Evan 信任',
+    evanTrust: 'Evan 的信任度',
   },
 }
 
@@ -208,17 +208,17 @@ const zh = {
   'I saw the numbers were inconsistent. The deadline was tomorrow. I thought fixing it directly was better than waiting.': '我看到数字不一致。明天就是截止日期。我以为直接修正比等大家回复更好。',
   'We need to decide whether Evan stays on the project. I just want everyone to be respectful.': '我们需要决定 Evan 要不要继续留在项目里。我只是希望大家保持尊重。',
 
-  'Before you meet Evan, Mira gives you a frame. Evan is not in the room yet, but the group already has a story about him.': '你还没有真正见到 Evan，Mira 已经给了你一个理解他的框架。Evan 还没进房间，但小组已经有了关于他的故事。',
+  'Before you meet Evan, Mira gives you a frame. Evan is not in the room yet, but the group already has a story about him.': '你还没有真正见到 Evan，Mira 已经给他定了标签。Evan 还没进房间，但小组已经有了关于他的故事。',
   'Everyone else has already headed out. Evan stayed behind. You\'re the only one who hasn\'t left yet — and you haven\'t actually spoken to him directly before.': '其他人都已经离开了。Evan 留了下来。你是唯一还没走的人——而你其实还从来没有直接和他说过话。',
   'Daniel is genuinely affected. The figures were also genuinely inconsistent. Both things can be true.': 'Daniel 确实受到了影响。那些数字也确实不一致。两个事实可以同时成立。',
   'Evan came to lunch — briefly. He left before it ended. Nobody mentioned it, but it was noticed. Then this happened.': 'Evan 来吃午饭了——待了一小会儿，还没结束就离开了。没人提这件事，但大家都注意到了。然后，就发生了这些。',
   'Evan stayed behind when everyone left for lunch. Whether he would have come, nobody thought to ask. Then this happened.': '大家去吃午饭，Evan 留了下来。他会不会来，没有人问。然后，就发生了这些。',
   "Evan didn't come to lunch. The group moved on without him. Then this happened.": 'Evan 没有来吃午饭。小组没有等他，就继续往前走了。然后，就发生了这些。',
   'The original sentence changes as it moves through the group. Emotion fills in the missing parts.': '原本的一句话在小组里传来传去，慢慢变了样。情绪补上了那些缺失的信息。',
-  "Evan came to lunch. Mira noticed. Now she's in the group chat, and the sentence that started with Evan has already changed shape.": 'Evan 来吃午饭了。Mira 注意到了。现在她在群聊里，那句关于 Evan 的话已经变了形。',
+  "Evan came to lunch. Mira noticed. Now she's in the group chat, and the sentence that started with Evan has already changed shape.": 'Evan 来了。Mira 注意到了。现在 Mira 在群聊里，那句关于 Evan 的话已经变了形。',
   "Evan stayed behind. Nobody knows quite what to make of that. Now it's late, and the group chat is still going.": 'Evan 留了下来。没有人知道该怎么解读这件事。现在天很晚了，群聊还在继续。',
   "Evan didn't come to lunch. The group decided that confirmed something. Now they're in the chat, and the sentence has already changed shape.": 'Evan 没有来吃午饭。小组觉得这件事说明了什么。现在他们在群聊里，那句话已经变了形。',
-  "From Evan's side, he was not invited to lunch, did not know Daniel rehearsed the old slide, and already expected the group to judge him.": '从 Evan 的角度看，他没有收到午餐邀请，也不知道 Daniel 已经用旧版本排练过，而且他早就预期小组会负面解读他。',
+  "From Evan's side, he did not know Daniel rehearsed the old slide, and already expected the group to judge him.": '从 Evan 的角度看，他不知道 Daniel 已经用旧版本排练过，而且他早就预期小组会负面解读他。',
   'Daniel needs accountability. Evan needs direct feedback. Mira needs to stop amplifying labels. Sara needs an actual decision.': 'Daniel 需要责任被看见。Evan 需要直接反馈。Mira 需要停止放大标签。Sara 需要做出真正的决定。',
 
   'Decide whether to accept the label or ask what actually happened.': '决定是接受这个标签，还是先问清楚到底发生了什么。',

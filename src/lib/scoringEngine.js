@@ -265,6 +265,10 @@ function buildAlienScoringPrompt(userText, character, sceneContext, conversation
     ? `Write the "feedback" string in Simplified Chinese (简体中文). One sentence, max 25 Chinese characters. Specific and actionable.`
     : `Write the "feedback" string in English. One sentence, max 20 words. Specific and actionable.`
 
+  const settingNote = lang === 'zh'
+    ? `## 场景设定\n这是大学小组作业场景，所有角色均为大学生同学。feedback 中请使用"同学"、"组员"、"队友"等称呼，不要使用"同事"、"公司"、"职场"等职场词汇。`
+    : `## Setting\nThis is a university group project. All characters are university classmates. In "feedback," use terms like "classmate" or "teammate" — never "colleague," "coworker," or "office."`
+
   const system = `You are a social-skills coaching judge for "Alien, Apparently," a game about group bias and relational intelligence.
 Score a single player message across four dimensions. Respond with valid JSON only — no markdown, no text outside the JSON.
 
@@ -277,6 +281,8 @@ ${improvesIf}
 
 ## What worsens things (worsensIf — lowers respect/awareness scores if matched):
 ${worsensIf}
+
+${settingNote}
 
 ## Scene context
 ${sceneBlock}
@@ -341,7 +347,7 @@ function heuristicAlienScore(userText, lang = 'en') {
   const composite  = Math.round(clarity * 0.28 + respect * 0.24 + awareness * 0.28 + boundary * 0.20)
   const feedback   = lang === 'zh' ? '离线评分 — LLM 暂不可用。' : 'Scored offline — LLM unavailable.'
 
-  return { clarity, respect, awareness, boundary, composite, feedback }
+  return { clarity, respect, awareness, boundary, composite, feedback, isHeuristic: true }
 }
 
 // ─── alien dimension weights ──────────────────────────────────────────────────

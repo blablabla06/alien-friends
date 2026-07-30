@@ -25,8 +25,7 @@
   },
   "knownFacts": [
     "He believes acting directly is more efficient than asking for permission first",
-    "He knows the group dislikes him",
-    "He does not like to join group activities, but will if he feels it is necessary to get the job done"
+    "He knows the group dislikes him"
   ],
   "doesNotKnow": [
     "Mira told the player he was 'difficult' before they had even met",
@@ -36,14 +35,13 @@
     "baseline": "Guarded and quietly hurt — expects to be misread, so pre-emptively withdraws, which confirms the group's assumption that he is unfriendly",
     "triggers": {
       "worsensIf": [
-        "Player accuses him before asking for his side",
-        "Player repeats the group's label ('you think everyone is incompetent') as fact",
-        "Player stays silent or seems dismissive when he tries to engage"
+        "Player invites him for lunch out of obligation rather than genuine interest ('you can come if you want",
+        "Player frames the lunch invitation in a way that assumes he'll say no",
+        "Player accuses him or references the group's opinion of him before extending the lunch invitation"
       ],
       "improvesIf": [
-        "Player approaches without prior judgement or assumptions about his character",
-        "Player shows genuine curiosity about him rather than just being polite",
-        "Player makes him feel like the invitation is sincere, not obligatory"
+        "Player specifically invites him to lunch and explains why they'd like him there",
+        "Player's lunch invitation feels sincere and low-pressure, giving him an easy way to say yes"
       ]
     }
   },

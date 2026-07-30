@@ -19,16 +19,6 @@ export const translations = {
       viewGrowthReport: 'View Growth Report',
     },
 
-    // ── ScenarioSelectPage ────────────────────────────────────────────────
-    select: {
-      heading: 'Choose a Scenario',
-      tierLabels: {
-        easy:   'Easy',
-        medium: 'Medium',
-        hard:   'Hard',
-      },
-    },
-
     // ── ScenarioIntroPage ─────────────────────────────────────────────────
     intro: {
       tapToBegin: 'Tap to begin',
@@ -146,16 +136,6 @@ export const translations = {
       viewGrowthReport: '查看成长报告',
     },
 
-    // ── ScenarioSelectPage ────────────────────────────────────────────────
-    select: {
-      heading: '选择场景',
-      tierLabels: {
-        easy:   '简单',
-        medium: '中等',
-        hard:   '困难',
-      },
-    },
-
     // ── ScenarioIntroPage ─────────────────────────────────────────────────
     intro: {
       tapToBegin: '点击开始',
@@ -173,7 +153,7 @@ export const translations = {
 
     // ── EndingScreen ──────────────────────────────────────────────────────
     ending: {
-      reflecting: '回想中…',
+      reflecting: '结局揭晓中…',
       seeResults: '查看你的结果 →',
       skip: '跳过',
       outcomes: {
