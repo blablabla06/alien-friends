@@ -14,7 +14,7 @@
   },
   "openingLine": {
     "en": "Alex looks up from his book. \"Oh — sorry, I didn't realise someone was sitting here. All good.\"",
-    "zh": "亚历克斯从书中抬起头。\"哦——抱歉，我没注意到有人坐过来。没关系的。\""
+    "zh": "亚历克斯从书中抬起头。\"哦——抱歉，我没注意到有人坐过来。\""
   },
   "successCondition": "Composite score ≥ 65 across all turns",
   "failureCondition": "Composite score < 35 OR NPC mood reaches 'cold' twice",

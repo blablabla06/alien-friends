@@ -304,7 +304,7 @@ export function buildAlienNpcPrompt(
     : ''
 
   const langBlock = lang === 'zh'
-    ? `\n## Language\nWrite ALL fields in Simplified Chinese (简体中文). Speak as ${character.name} naturally would in Chinese.`
+    ? `\n## Language — applies to every field, no exceptions\nWrite EVERY field in Simplified Chinese (简体中文), including:\n- npcResponse (spoken dialogue)\n- npcAction (physical/emotional narration — this is NOT exempt, even though it describes actions rather than speech)\n- every "text" value inside suggestedReplies\nDo not leave any single field in English, even if it feels more like narration/description than spoken dialogue. ${character.name} himself speaks Chinese, and so does the narration describing him.`
     : ''
 
   const finalTurnExample = lang === 'zh'

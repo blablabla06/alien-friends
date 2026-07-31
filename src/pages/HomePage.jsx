@@ -38,6 +38,15 @@ export default function HomePage() {
   const { state, actions } = useGameState()
   const { lang, setLang } = useLang()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const [isMuted, setIsMuted] = useState(() => {
+    try { return localStorage.getItem('af_voice_muted') === 'true' } catch { return false }
+  })
+
+  function toggleMute() {
+    const next = !isMuted
+    setIsMuted(next)
+    try { localStorage.setItem('af_voice_muted', String(next)) } catch { /* ignore */ }
+  }
 
   function handleResetConfirmed() {
     LS_KEYS_TO_CLEAR.forEach((key) => {
@@ -79,25 +88,44 @@ export default function HomePage() {
         </p>
       </header>
 
-      {/* Language toggle */}
-      <div
-        className="flex items-center gap-1 rounded-full px-1 py-1"
-        style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
-      >
-        {['en', 'zh'].map((l) => (
-          <button
-            key={l}
-            onClick={() => setLang(l)}
-            className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
-            style={
-              lang === l
-                ? { backgroundColor: '#8A8FA3', color: '#1A1D29' }
-                : { color: '#EDEBE4', opacity: 0.5 }
-            }
-          >
-            {l === 'en' ? 'EN' : 'ZH'}
-          </button>
-        ))}
+      {/* Language toggle + mute toggle */}
+      <div className="flex items-center gap-3">
+        <div
+          className="flex items-center gap-1 rounded-full px-1 py-1"
+          style={{ backgroundColor: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}
+        >
+          {['en', 'zh'].map((l) => (
+            <button
+              key={l}
+              onClick={() => setLang(l)}
+              className="px-3 py-1 rounded-full text-xs font-semibold transition-all"
+              style={
+                lang === l
+                  ? { backgroundColor: '#8A8FA3', color: '#1A1D29' }
+                  : { color: '#EDEBE4', opacity: 0.5 }
+              }
+            >
+              {l === 'en' ? 'EN' : 'ZH'}
+            </button>
+          ))}
+        </div>
+
+        {/* Mute / unmute voice */}
+        <button
+          onClick={toggleMute}
+          aria-label={isMuted ? 'Unmute voice' : 'Mute voice'}
+          title={isMuted ? 'Unmute voice' : 'Mute voice'}
+          className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
+          style={{
+            width: '34px',
+            height: '34px',
+            fontSize: '16px',
+            backgroundColor: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.12)',
+          }}
+        >
+          {isMuted ? '🔇' : '🔊'}
+        </button>
       </div>
 
       {/* Level + streak */}

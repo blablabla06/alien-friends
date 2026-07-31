@@ -14,7 +14,7 @@
   },
   "openingLine": {
     "en": "Jamie glances up. \"Morning.\" She holds eye contact just long enough to be polite, then looks back at her screen.",
-    "zh": "杰米抬起头瞥了一眼，目光停留了刚好够礼貌的一秒，然后又回到了屏幕上\"早。\""
+    "zh": "杰米抬起头瞥了一眼，目光停留了刚好够礼貌的一秒，然后又回到了屏幕上\"早安。\""
   },
   "successCondition": "Composite score ≥ 65 and at least one reveal condition met",
   "failureCondition": "Composite score < 35 OR Jamie explicitly returns to work twice",

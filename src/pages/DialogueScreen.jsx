@@ -33,6 +33,57 @@ const BG_MAP = {
   '/assets/backgrounds/supermarket.png':     bgSupermarket,
 }
 
+// ── character voice clips (EN) ────────────────────────────────────────────────
+import alexVoiceEn    from '../assets/voice/practice-en/alex.wav'
+import jamieVoiceEn   from '../assets/voice/practice-en/jamie.wav'
+import samVoiceEn     from '../assets/voice/practice-en/sam.wav'
+import morganVoiceEn  from '../assets/voice/practice-en/morgan.wav'
+import rileyVoiceEn   from '../assets/voice/practice-en/riley.wav'
+import mumVoiceEn     from '../assets/voice/practice-en/mum.wav'
+import jordanVoiceEn  from '../assets/voice/practice-en/jordan.wav'
+
+// ── character voice clips (ZH) ────────────────────────────────────────────────
+import alexVoiceZh    from '../assets/voice/practice-ch/alex.wav'
+import jamieVoiceZh   from '../assets/voice/practice-ch/jamie.wav'
+import samVoiceZh     from '../assets/voice/practice-ch/sam.wav'
+import morganVoiceZh  from '../assets/voice/practice-ch/morgan.wav'
+import rileyVoiceZh   from '../assets/voice/practice-ch/riley.wav'
+import mumVoiceZh     from '../assets/voice/practice-ch/mum.wav'
+import jordanVoiceZh  from '../assets/voice/practice-ch/jordan.wav'
+
+// Keyed by character.name.toLowerCase().
+// 'mom' maps to mum.wav — the JSON name is "Mom" but the audio file is mum.wav.
+const CHARACTER_VOICE = {
+  alex:   { en: alexVoiceEn,   zh: alexVoiceZh },
+  jamie:  { en: jamieVoiceEn,  zh: jamieVoiceZh },
+  sam:    { en: samVoiceEn,    zh: samVoiceZh },
+  morgan: { en: morganVoiceEn, zh: morganVoiceZh },
+  riley:  { en: rileyVoiceEn,  zh: rileyVoiceZh },
+  mom:    { en: mumVoiceEn,    zh: mumVoiceZh },
+  jordan: { en: jordanVoiceEn, zh: jordanVoiceZh },
+}
+
+// ── Web Audio gain-boosted playback ───────────────────────────────────────────
+function playVoiceClip(src, gainMultiplier = 1.8) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const audio = new Audio(src)
+    audio.crossOrigin = 'anonymous'
+    const source = audioCtx.createMediaElementSource(audio)
+    const gainNode = audioCtx.createGain()
+    gainNode.gain.value = gainMultiplier // boost beyond 100% — tune in 1.5–2.5 range
+    source.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+    audio.play().catch(() => { /* fail silently */ })
+    return audio
+  } catch {
+    // Fallback: plain Audio element if Web Audio API fails
+    const audio = new Audio(src)
+    audio.play().catch(() => {})
+    return audio
+  }
+}
+
 export default function DialogueScreen() {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
@@ -57,6 +108,8 @@ export default function DialogueScreen() {
   const freeTextCountRef = useRef(0)
   // Preserves the player's last send so it can be retried without retyping
   const pendingRetryRef = useRef(null)   // { text, isSuggestion }
+  // Tracks the currently playing opening-line HTMLAudioElement
+  const audioRef = useRef(null)
 
   // ── Guard: redirect if no scenario loaded ──
   useEffect(() => {
@@ -81,6 +134,31 @@ export default function DialogueScreen() {
       npcAction: openingNarration,
       timestamp: Date.now(),
     })
+  }, []) // eslint-disable-line
+
+  // ── Auto-play character voice clip when the opening line first appears ──
+  // Reads the shared mute flag from localStorage so it stays in sync with
+  // the toggle on HomePage without needing a prop or context.
+  // Fires once on mount (same lifecycle as the opening-line effect above).
+  useEffect(() => {
+    if (!character) return
+
+    // Stop any clip that might still be playing from a previous scenario
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+
+    let isMuted = false
+    try { isMuted = localStorage.getItem('af_voice_muted') === 'true' } catch { /* ignore */ }
+    if (isMuted) return
+
+    const key = character.name?.toLowerCase() ?? ''
+    const src = CHARACTER_VOICE[key]?.[lang]
+    if (!src) return
+
+    audioRef.current = playVoiceClip(src)
   }, []) // eslint-disable-line
 
   // ── Auto-scroll ──

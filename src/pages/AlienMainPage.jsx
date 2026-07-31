@@ -18,6 +18,52 @@ import evanEarlyJson from '../data/alien-characters/evan-early.json'
 import evanFullJson  from '../data/alien-characters/evan-full.json'
 import saraJson      from '../data/alien-characters/sara.json'
 
+// ── chapter voice clips (EN) ──────────────────────────────────────────────────
+import miraVoiceEn      from '../assets/voice/main-en/mira.wav'
+import evanEarlyVoiceEn from '../assets/voice/main-en/evan-early.wav'
+import danielVoiceEn    from '../assets/voice/main-en/daniel.wav'
+import miraVoice2En     from '../assets/voice/main-en/mira-2.wav'
+import evanFullVoiceEn  from '../assets/voice/main-en/evan-full.wav'
+import saraVoiceEn      from '../assets/voice/main-en/sara.wav'
+
+// ── chapter voice clips (ZH) ──────────────────────────────────────────────────
+import miraVoiceZh      from '../assets/voice/main-ch/mira.wav'
+import evanEarlyVoiceZh from '../assets/voice/main-ch/evan-early.wav'
+import danielVoiceZh    from '../assets/voice/main-ch/daniel.wav'
+import miraVoice2Zh     from '../assets/voice/main-ch/mira-2.wav'
+import evanFullVoiceZh  from '../assets/voice/main-ch/evan-full.wav'
+import saraVoiceZh      from '../assets/voice/main-ch/sara.wav'
+
+const CHAPTER_VOICE = {
+  label:       { en: miraVoiceEn,      zh: miraVoiceZh },
+  lunch:       { en: evanEarlyVoiceEn, zh: evanEarlyVoiceZh },
+  slides:      { en: danielVoiceEn,    zh: danielVoiceZh },
+  rumour:      { en: miraVoice2En,     zh: miraVoice2Zh },
+  perspective: { en: evanFullVoiceEn,  zh: evanFullVoiceZh },
+  meeting:     { en: saraVoiceEn,      zh: saraVoiceZh },
+}
+
+// ── Web Audio gain-boosted playback ───────────────────────────────────────────
+function playVoiceClip(src, gainMultiplier = 1.8) {
+  try {
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)()
+    const audio = new Audio(src)
+    audio.crossOrigin = 'anonymous'
+    const source = audioCtx.createMediaElementSource(audio)
+    const gainNode = audioCtx.createGain()
+    gainNode.gain.value = gainMultiplier // boost beyond 100% — tune in 1.5–2.5 range
+    source.connect(gainNode)
+    gainNode.connect(audioCtx.destination)
+    audio.play().catch(() => { /* fail silently */ })
+    return audio
+  } catch {
+    // Fallback: plain Audio element if Web Audio API fails
+    const audio = new Audio(src)
+    audio.play().catch(() => {})
+    return audio
+  }
+}
+
 // ── scene background images ───────────────────────────────────────────────────
 import bgEnding      from '../assets/backgrounds/scene-ending.png'
 import bgLabel       from '../assets/backgrounds/scene-label.png'
@@ -501,6 +547,12 @@ export default function AlienMainPage() {
   // awaitingChapterAdvance: true after the final NPC reply is shown — waiting for player to click Continue
   const [awaitingChapterAdvance, setAwaitingChapterAdvance] = useState(saved?.awaitingChapterAdvance ?? false)
 
+  // ── voice mute state — persisted to localStorage ─────────────────────────
+  const [isMuted, setIsMuted] = useState(() => {
+    try { return localStorage.getItem('af_voice_muted') === 'true' } catch { return false }
+  })
+  const audioRef = useRef(null) // tracks the currently playing HTMLAudioElement
+
   // One AbortController per turn — replaces all manual ref/timeout comparisons.
   const abortRef = useRef(null)
 
@@ -523,6 +575,26 @@ export default function AlienMainPage() {
       .filter(m => m.role === 'npc' || m.role === 'user')
       .map(m => ({ role: m.role, text: m.text, action: m.action ?? null }))
   }, [chapterMessages])
+
+  // ── auto-play chapter opening voice clip when a new scene is entered ────────
+  // Fires whenever sceneIndex or lang changes (and not during report/ending views).
+  // Stops any previously playing clip first so audio never overlaps.
+  useEffect(() => {
+    if (showReport || showEnding) return
+    const src = CHAPTER_VOICE[scene.id]?.[lang]
+    if (!src) return
+
+    // Stop the previous clip immediately
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
+
+    if (isMuted) return
+
+    audioRef.current = playVoiceClip(src)
+  }, [sceneIndex, lang]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── persist to localStorage on every relevant state change ──────────────
   useEffect(() => {
@@ -939,12 +1011,21 @@ export default function AlienMainPage() {
         charJson, scene, currentSceneHistory, playerText, hidden, isPerspective, lang, isFinalTurn, sceneIndex,
       )
 
-      const [npcResult, scoreResult] = await Promise.all([
-        callLLM(npcMessages, controller.signal),
+      // const [npcResult, scoreResult] = await Promise.all([
+      //   callLLM(npcMessages, controller.signal),
+      //   scoreAlienResponse(playerText, charJson, scene, currentSceneHistory, lang, controller.signal),
+      // ])
+
+      const scorePromise = Promise.race([
         scoreAlienResponse(playerText, charJson, scene, currentSceneHistory, lang, controller.signal),
-      ])
+        new Promise(resolve => setTimeout(() => resolve({ ok: false, timedOut: true }), 10_000)),
+      ]).catch(() => ({ ok: false }))
+
+      const npcResult = await callLLM(npcMessages, controller.signal)
 
       clearTimeout(timeoutId)
+
+      // clearTimeout(timeoutId)
 
       if (controller.signal.aborted) {
         if (timedOut) {
@@ -1033,6 +1114,7 @@ export default function AlienMainPage() {
       }
 
       // ── DIAGNOSTIC: log full scoreResult every turn ──────────────────────
+      const scoreResult = await scorePromise
       console.group(`[AlienMainPage] scoreResult — scene: ${scene.id}, turn: ${turnCount + 1}/${MAX_TURNS_PER_CHAPTER}`)
       console.log('isHeuristic (fallback?):', scoreResult.isHeuristic ?? false)
       console.log('scoreResult:', JSON.stringify(scoreResult, null, 2))
@@ -1115,6 +1197,11 @@ export default function AlienMainPage() {
 
   function restart() {
     abortRef.current?.abort()
+    if (audioRef.current) {
+      audioRef.current.pause()
+      audioRef.current.src = ''
+      audioRef.current = null
+    }
     try { localStorage.removeItem(LS_KEY) } catch { /* silent */ }
     setSceneIndex(0)
     setScores(BASE_SCORES)
@@ -1143,9 +1230,29 @@ export default function AlienMainPage() {
           <strong>Alien, Apparently</strong>
           <span>{ui.subtitle}</span>
         </div>
-        <button className="af-ghost-button" onClick={() => navigate('/')}>
-          {ui.home}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button
+            className="af-ghost-button"
+            aria-label={isMuted ? 'Unmute voice' : 'Mute voice'}
+            title={isMuted ? 'Unmute voice' : 'Mute voice'}
+            onClick={() => {
+              const next = !isMuted
+              setIsMuted(next)
+              try { localStorage.setItem('af_voice_muted', String(next)) } catch { /* ignore */ }
+              if (next && audioRef.current) {
+                audioRef.current.pause()
+                audioRef.current.src = ''
+                audioRef.current = null
+              }
+            }}
+            style={{ fontSize: '16px', padding: '4px 8px', lineHeight: 1 }}
+          >
+            {isMuted ? '🔇' : '🔊'}
+          </button>
+          <button className="af-ghost-button" onClick={() => navigate('/')}>
+            {ui.home}
+          </button>
+        </div>
       </div>
 
       {showEnding ? (

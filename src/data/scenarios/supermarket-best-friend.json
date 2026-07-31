@@ -14,7 +14,7 @@
   },
   "openingLine": {
     "en": "Jordan freezes when he sees you. A long beat of silence. He grips the trolley. \"Oh. Hi.\"",
-    "zh": "乔丹看见你时整个人僵住了。漫长的沉默。他握紧了购物车。\"哦。你好。\""
+    "zh": "乔丹看见你时整个人僵住了。漫长的沉默。他握紧了购物车。\"嗨。真巧。\""
   },
   "successCondition": "Composite score ≥ 75 and at least one hidden layer revealed",
   "failureCondition": "Composite score < 40 OR Jordan says goodbye and walks away before maxTurns",
