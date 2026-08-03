@@ -200,6 +200,11 @@
     0 -24px 56px rgba(0,0,0,0.60),
     inset 0 1px 0 rgba(255,255,255,0.06);
   backdrop-filter: blur(14px);
+  /* Fixed height + inner scroll — prevents dialogue from pushing character art up */
+  max-height: clamp(220px, 32vh, 400px);
+  display: flex;
+  flex-direction: column;
+  gap: 0;
 }
 
 .af-speaker-line {
@@ -904,7 +909,516 @@
   }
 }
 
-/* ── Responsive — mobile (≤ 560px wide) ─────────────────────────────────── */
+/* ── Fixed-height scrollable dialogue region ────────────────────────────── */
+
+/*
+  .af-dialogue is a flex column (defined above) with a fixed max height.
+  .af-dialogue-scroll is the inner scrollable container.
+*/
+
+.af-dialogue-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  /* Thin custom scrollbar */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(212,165,116,0.3) transparent;
+  padding-right: 4px;
+  /* Fade top edge so old messages gracefully disappear */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 14%);
+  mask-image: linear-gradient(to bottom, transparent 0%, black 14%);
+}
+
+.af-dialogue-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.af-dialogue-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.af-dialogue-scroll::-webkit-scrollbar-thumb {
+  background: rgba(212,165,116,0.3);
+  border-radius: 999px;
+}
+
+/* ── NPC typing indicator ────────────────────────────────────────────────── */
+
+.af-typing-indicator {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  align-self: flex-start;
+  max-width: 85%;
+}
+
+.af-typing-bubble {
+  padding: 10px 14px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.af-typing-label {
+  font-size: 11px;
+  font-style: italic;
+  color: rgba(237,235,228,0.52);
+  white-space: nowrap;
+}
+
+.af-typing-dots {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.af-typing-dots span {
+  display: block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(237,235,228,0.55);
+  animation: af-dot-pulse 1.4s ease-in-out infinite;
+}
+
+.af-typing-dots span:nth-child(2) { animation-delay: 0.18s; }
+.af-typing-dots span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes af-dot-pulse {
+  0%, 80%, 100% { transform: scale(0.72); opacity: 0.4; }
+  40%           { transform: scale(1.15); opacity: 1; }
+}
+
+/* Soft glow shimmer on the typing bubble */
+@keyframes af-shimmer-slide {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+.af-typing-bubble::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.06) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: af-shimmer-slide 1.8s linear infinite;
+  pointer-events: none;
+}
+
+.af-typing-bubble {
+  position: relative;
+  overflow: hidden;
+}
+
+/* ── Skeleton / shimmer loading cards (suggested replies) ───────────────── */
+
+.af-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.af-skeleton-card {
+  width: 100%;
+  border-radius: 11px;
+  border: 1px solid rgba(255,255,255,0.08);
+  background: rgba(255,255,255,0.055);
+  padding: clamp(9px, 1vh, 12px) 12px;
+  overflow: hidden;
+  position: relative;
+}
+
+.af-skeleton-label {
+  height: 9px;
+  width: 48px;
+  border-radius: 999px;
+  background: rgba(212,165,116,0.18);
+  margin-bottom: 8px;
+}
+
+.af-skeleton-line {
+  height: 11px;
+  border-radius: 999px;
+  background: rgba(237,235,228,0.1);
+  margin-bottom: 5px;
+}
+
+.af-skeleton-line:last-child {
+  width: 65%;
+  margin-bottom: 0;
+}
+
+/* Shimmer sweep */
+.af-skeleton-card::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255,255,255,0.07) 50%,
+    transparent 100%
+  );
+  background-size: 200% 100%;
+  animation: af-shimmer-slide 1.6s linear infinite;
+}
+
+.af-skeleton-status {
+  font-size: 11px;
+  color: rgba(237,235,228,0.4);
+  text-align: center;
+  padding: 10px 0 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.af-skeleton-status-dots {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.af-skeleton-status-dots span {
+  display: block;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: rgba(212,165,116,0.55);
+  animation: af-dot-pulse 1.4s ease-in-out infinite;
+}
+
+.af-skeleton-status-dots span:nth-child(2) { animation-delay: 0.18s; }
+.af-skeleton-status-dots span:nth-child(3) { animation-delay: 0.36s; }
+
+/* Roster alienation: Evan only. This is the persistent visual meter for how
+   strongly the group is turning Evan into "the alien". */
+.af-roster-item.alienating,
+.af-roster-item.alienation-cleared {
+  position: relative;
+  overflow: hidden;
+}
+
+.af-roster-item.alienating {
+  border-color: rgba(188, 145, 255, calc(0.52 + var(--alien-intensity, 0) * 0.38));
+  background:
+    repeating-linear-gradient(
+      0deg,
+      transparent,
+      transparent 4px,
+      rgba(120, 230, 255, calc(var(--alien-intensity, 0) * 0.045)) 4px,
+      rgba(120, 230, 255, calc(var(--alien-intensity, 0) * 0.045)) 5px
+    ),
+    linear-gradient(
+      135deg,
+      rgba(155, 107, 200, calc(0.14 + var(--alien-intensity, 0) * 0.16)) 0%,
+      rgba(10, 12, 28, 0.44) 100%
+    );
+  box-shadow:
+    0 0 0 1px rgba(155, 107, 200, calc(var(--alien-intensity, 0) * 0.50)) inset,
+    0 0 calc(9px + var(--alien-intensity, 0) * 12px) rgba(155, 107, 200, calc(var(--alien-intensity, 0) * 0.34));
+  transition: border-color 0.8s ease, background 0.8s ease, box-shadow 0.8s ease;
+}
+
+.af-roster-item.alien-stage-distorted {
+  border-color: rgba(124, 229, 255, 0.78);
+}
+
+.af-roster-item.alien-stage-alienated {
+  animation: af-alien-card-pulse 2.3s ease-in-out infinite;
+}
+
+.af-roster-item.alienation-cleared {
+  border-color: rgba(78, 205, 196, 0.42);
+  background: linear-gradient(135deg, rgba(78, 205, 196, 0.08), rgba(10,12,28,0.34));
+}
+
+.af-character-face {
+  position: relative;
+}
+
+.af-character-face img {
+  border-radius: 50%;
+}
+
+.af-character-face.alienating {
+  overflow: visible;
+  border-color: rgba(210, 170, 255, 0.96) !important;
+  box-shadow:
+    0 0 0 2px rgba(155, 107, 200, calc(0.24 + var(--alien-intensity, 0) * 0.34)),
+    0 0 calc(8px + var(--alien-intensity, 0) * 10px) rgba(155, 107, 200, calc(0.42 + var(--alien-intensity, 0) * 0.34));
+  transition: box-shadow 0.8s ease, border-color 0.8s ease;
+}
+
+.af-character-face.alienating img {
+  filter:
+    hue-rotate(calc(var(--alien-intensity, 0) * 95deg))
+    saturate(calc(1 - var(--alien-intensity, 0) * 0.46))
+    contrast(calc(1 + var(--alien-intensity, 0) * 0.30))
+    brightness(calc(1 - var(--alien-intensity, 0) * 0.08));
+}
+
+.af-character-face.alienating::after {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  border-radius: 50%;
+  border: 1px solid rgba(120, 230, 255, calc(0.32 + var(--alien-intensity, 0) * 0.55));
+  box-shadow:
+    -2px 0 7px rgba(155, 107, 200, calc(var(--alien-intensity, 0) * 0.84)),
+    2px 0 7px rgba(80, 220, 255, calc(var(--alien-intensity, 0) * 0.68)),
+    inset 0 0 7px rgba(80, 220, 255, calc(var(--alien-intensity, 0) * 0.32));
+  pointer-events: none;
+  animation: af-alien-ring-shift 1.8s steps(2, end) infinite;
+}
+
+.af-character-face.alienation-cleared {
+  border-color: rgba(78, 205, 196, 0.82) !important;
+  box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.22), 0 0 8px rgba(78, 205, 196, 0.16);
+}
+
+.af-roster-alien-block {
+  display: grid;
+  gap: 5px;
+  margin-top: 3px;
+}
+
+.af-roster-alien-block.cleared {
+  opacity: 0.92;
+}
+
+.af-roster-alien-status {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  font-size: 9px;
+  font-weight: 900;
+  letter-spacing: 0;
+  color: rgba(218, 184, 255, 0.92);
+  text-shadow: 0 0 7px rgba(155, 107, 200, 0.48);
+}
+
+.af-roster-alien-status-cleared,
+.af-roster-alien-cleared {
+  color: rgba(99, 234, 219, 0.88);
+  text-shadow: 0 0 7px rgba(78, 205, 196, 0.34);
+}
+
+.af-roster-alien-status-alienated {
+  color: rgba(244, 211, 255, 0.98);
+}
+
+.af-roster-alien-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(155, 107, 200, 0.95);
+  box-shadow: 0 0 8px rgba(155, 107, 200, 0.75);
+  flex-shrink: 0;
+  animation: af-dot-pulse 1.6s ease-in-out infinite;
+}
+
+.af-roster-alien-block.cleared .af-roster-alien-dot,
+.af-roster-alien-cleared .af-roster-alien-dot {
+  background: rgba(78, 205, 196, 0.95);
+  box-shadow: 0 0 8px rgba(78, 205, 196, 0.62);
+  animation: none;
+}
+
+.af-roster-alien-meter {
+  display: grid;
+  gap: 3px;
+}
+
+.af-roster-alien-meter-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 9px;
+  line-height: 1.1;
+  color: rgba(237,235,228,0.50);
+}
+
+.af-roster-alien-meter-row strong {
+  color: rgba(237,235,228,0.82);
+}
+
+.af-roster-alien-track {
+  height: 5px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.09);
+  border: 1px solid rgba(255,255,255,0.06);
+}
+
+.af-roster-alien-fill {
+  height: 100%;
+  width: var(--alien-progress, 0%);
+  border-radius: inherit;
+  background: linear-gradient(90deg, #9B6BC8, #78E6FF);
+  box-shadow: 0 0 8px rgba(120,230,255,0.45);
+  transition: width 0.8s ease;
+}
+
+.af-roster-alien-block.cleared .af-roster-alien-fill {
+  background: linear-gradient(90deg, rgba(78,205,196,0.38), rgba(78,205,196,0.86));
+  box-shadow: 0 0 6px rgba(78,205,196,0.28);
+}
+
+.af-roster-alien-shift {
+  margin-left: auto;
+  border-radius: 999px;
+  padding: 1px 5px;
+  font-size: 9px;
+  font-weight: 900;
+  animation: af-alien-shift-pop 2.1s ease both;
+}
+
+.af-roster-alien-shift.up {
+  color: #F4D3FF;
+  background: rgba(155, 107, 200, 0.26);
+}
+
+.af-roster-alien-shift.down {
+  color: #6EE7D8;
+  background: rgba(78, 205, 196, 0.18);
+}
+
+@keyframes af-alien-ring-shift {
+  0%, 100% { transform: translateX(0); opacity: 0.86; }
+  50% { transform: translateX(1px); opacity: 1; }
+}
+
+@keyframes af-alien-card-pulse {
+  0%, 100% { box-shadow: 0 0 0 1px rgba(155,107,200,0.52) inset, 0 0 12px rgba(155,107,200,0.26); }
+  50% { box-shadow: 0 0 0 1px rgba(120,230,255,0.58) inset, 0 0 18px rgba(120,230,255,0.24); }
+}
+
+@keyframes af-alien-shift-pop {
+  0% { opacity: 0; transform: translateY(5px) scale(0.92); }
+  18% { opacity: 1; transform: translateY(0) scale(1); }
+  78% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-4px) scale(0.98); }
+}
+/* Alien Perception Filter ─────────────────────────────────────────────── */
+
+/*
+  Applied to .af-character-fullbody when the speaker is Evan (pre-Perspective Shift).
+  Intensity is driven by CSS variable --alien-intensity (0 → 1).
+
+  Effects at full intensity (--alien-intensity = 1):
+  • Hue shift ≈ 40°  — slight blue/violet tint
+  • Desaturation ≈ 30% — feels distant, flattened
+  • Chromatic glow shadow — the "alien outline"
+  • Scanline/noise pseudo-overlay
+  • Subtle contrast increase
+  • Glitch-style shift-shadow at high intensity
+
+  Effects are deliberately gradual — barely visible at 0.1, clearly
+  eerie at 0.8+, but never cartoonish or replacing the art.
+*/
+
+.af-character-fullbody.alien-filter {
+  /* Core CSS filter chain — each property scaled to --alien-intensity */
+  filter:
+    hue-rotate(calc(var(--alien-intensity, 0) * 44deg))
+    saturate(calc(1 - var(--alien-intensity, 0) * 0.32))
+    contrast(calc(1 + var(--alien-intensity, 0) * 0.14))
+    drop-shadow(
+      calc(var(--alien-intensity, 0) * -4px)
+      0px
+      calc(var(--alien-intensity, 0) * 12px)
+      rgba(155, 107, 200, calc(var(--alien-intensity, 0) * 0.72))
+    )
+    drop-shadow(
+      calc(var(--alien-intensity, 0) * 3px)
+      0px
+      calc(var(--alien-intensity, 0) * 8px)
+      rgba(80, 200, 255, calc(var(--alien-intensity, 0) * 0.42))
+    );
+  transition:
+    filter 1.2s ease,
+    opacity 0.4s ease;
+}
+
+/* Scanline + noise overlay rendered via pseudo-element on the parent .af-visual
+   when the alien filter is active. We target a data attribute set by JS. */
+.af-visual[data-alien-active="true"]::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  /* Scanline pattern */
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0, 0, 0, calc(var(--alien-intensity, 0) * 0.10)) 3px,
+    rgba(0, 0, 0, calc(var(--alien-intensity, 0) * 0.10)) 4px
+  );
+  /* Scale opacity with intensity */
+  opacity: var(--alien-intensity, 0);
+  mix-blend-mode: multiply;
+  border-radius: 16px;
+  /* Fade in/out smoothly */
+  transition: opacity 1.2s ease;
+}
+
+/* Small "filter active" status badge — top-left corner of the scene */
+.af-alien-filter-badge {
+  position: absolute;
+  top: clamp(10px, 1.4vh, 18px);
+  right: clamp(10px, 1.4vw, 18px);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px 4px 6px;
+  border-radius: 999px;
+  border: 1px solid rgba(155,107,200,0.35);
+  background: rgba(10,8,22,0.72);
+  backdrop-filter: blur(8px);
+  font-size: 9px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: rgba(200,160,255,0.72);
+  pointer-events: none;
+  /* Fade in when intensity > 0 */
+  transition: opacity 0.8s ease;
+}
+
+.af-alien-filter-badge-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(155,107,200,0.9);
+  animation: af-dot-pulse 2s ease-in-out infinite;
+}
+
+/* ── Perspective Shift — invert the filter: group looks alien, Evan normal ─ */
+.af-visual.perspective .af-character-fullbody.alien-filter {
+  /* Remove Evan's alien look completely during his own POV */
+  filter: none;
+  transition: filter 0.8s ease;
+}
+
+/* Responsive — mobile (≤ 560px wide) ─────────────────────────────────────── */
 
 @media (max-width: 560px) {
   :root {

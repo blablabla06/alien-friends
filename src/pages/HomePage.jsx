@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
+import { hasCompletedStory, HISTORY_KEY } from '../lib/alienStoryHistory.js'
 import LevelBadge from '../components/LevelBadge.jsx'
 import StreakTracker from '../components/StreakTracker.jsx'
 import DailyMissionCard from '../components/DailyMissionCard.jsx'
@@ -30,6 +31,7 @@ const AVATAR_MAP = {
 const LS_KEYS_TO_CLEAR = [
   'alien_friends_progress', // Practice Mode: GameStateContext (xp, level, streak, sessionLog…)
   'alienStory_v3',          // Story Mode: AlienMainPage scene progress + choices
+  HISTORY_KEY,              // Story History: ending collection + run history
   'af_lang',                // Language preference
 ]
 
@@ -38,6 +40,7 @@ export default function HomePage() {
   const { state, actions } = useGameState()
   const { lang, setLang } = useLang()
   const [showResetConfirm, setShowResetConfirm] = useState(false)
+  const showStoryHistory = hasCompletedStory()
   const [isMuted, setIsMuted] = useState(() => {
     try { return localStorage.getItem('af_voice_muted') === 'true' } catch { return false }
   })
@@ -57,15 +60,17 @@ export default function HomePage() {
 
   const homeText = lang === 'zh'
     ? {
-        tagline: '一个关于谣言、偏见与群体归属的 2 分钟可玩预告。',
-        play: '试玩 2 分钟原型',
-        report: '成长报告',
+        tagline:        '一个关于谣言、偏见与群体归属的 2 分钟可玩预告。',
+        play:           '试玩 2 分钟原型',
+        report:         '成长报告',
+        storyHistory:   '故事历史',
         practiceHeading: '练习对话',
       }
     : {
-        tagline: 'A 2-minute playable trailer about rumours, bias, and group belonging.',
-        play: 'Play the Story',
-        report: 'Growth Report',
+        tagline:        'A 2-minute playable trailer about rumours, bias, and group belonging.',
+        play:           'Play the Story',
+        report:         'Growth Report',
+        storyHistory:   'Story History',
         practiceHeading: 'Practice Conversations',
       }
 
@@ -158,6 +163,21 @@ export default function HomePage() {
       >
         {homeText.report}
       </button>
+
+      {/* Story History — only shown after at least one completed run */}
+      {showStoryHistory && (
+        <button
+          onClick={() => navigate('/story-history')}
+          className="w-full max-w-xs px-10 py-3 rounded-2xl text-sm font-semibold transition-all hover:opacity-90 active:scale-95"
+          style={{
+            border: '1.5px solid #4ECDC4',
+            color: '#4ECDC4',
+            backgroundColor: 'transparent',
+          }}
+        >
+          {homeText.storyHistory}
+        </button>
+      )}
 
       {/* Divider */}
       <div className="w-full border-t" style={{ borderColor: 'rgba(255,255,255,0.1)' }} />

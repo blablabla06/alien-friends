@@ -9,6 +9,7 @@ import EndingScreen        from './pages/EndingScreen.jsx'
 import ResultsScreen       from './pages/ResultsScreen.jsx'
 import GrowthReportPage    from './pages/GrowthReportPage.jsx'
 import AlienMainPage        from './pages/AlienMainPage.jsx'
+import StoryHistoryPage     from './pages/StoryHistoryPage.jsx'
 
 export default function App() {
   return (
@@ -23,6 +24,7 @@ export default function App() {
           <Route path="/ending"                 element={<EndingScreen />} />
           <Route path="/results"                element={<ResultsScreen />} />
           <Route path="/growth"                 element={<GrowthReportPage />} />
+          <Route path="/story-history"          element={<StoryHistoryPage />} />
         </Routes>
       </BrowserRouter>
     </GameStateProvider>

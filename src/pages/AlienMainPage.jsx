@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LanguageContext.jsx'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { storyText, storyUi } from '../lib/alienPrototypeI18n.js'
+import { saveStoryRun, endingSlug } from '../lib/alienStoryHistory.js'
 import { buildAlienNpcPrompt, buildPerspectiveShiftPrompt } from '../lib/aiCharacterPrompt.js'
 import { extractCleanDialogue } from '../lib/npcResponseParser.js'
 import { scoreAlienResponse } from '../lib/scoringEngine.js'
@@ -254,6 +255,32 @@ function applyDelta(target, delta) {
   return next
 }
 
+function getAlienationPercent(state) {
+  const { labelPower = 0, rumour = 0, tension = 0, evanTrust = 50 } = state ?? {}
+  const socialPressure = labelPower * 0.42 + rumour * 0.36 + tension * 0.22
+  const trustRelief = Math.max(0, evanTrust - 35) * 0.35
+  return clamp(Math.round(socialPressure - trustRelief + 12))
+}
+
+function getAlienationStage(percent, isPerspective = false) {
+  if (isPerspective) {
+    return {
+      id: 'cleared',
+      zh: '视角切换：标签减弱',
+      en: 'Perspective shift: label fading',
+    }
+  }
+  if (percent >= 75) {
+    return { id: 'alienated', zh: '已被群体异化', en: 'Alienated by the group' }
+  }
+  if (percent >= 50) {
+    return { id: 'distorted', zh: '逐渐被外星人化', en: 'Becoming alienated' }
+  }
+  if (percent >= 25) {
+    return { id: 'labelled', zh: '被标签化中', en: 'Being labelled' }
+  }
+  return { id: 'normal', zh: '正常看见', en: 'Seen normally' }
+}
 /**
  * Convert LLM alien score dimensions into the game's hidden state deltas.
  * The LLM returns absolute quality scores; we translate them into
@@ -463,7 +490,7 @@ function loadSavedState() {
 
 // ── child components ──────────────────────────────────────────────────────────
 
-function GroupRoster({ currentSpeaker, revealedIds, lang, ui }) {
+function GroupRoster({ currentSpeaker, revealedIds, lang, ui, alienFilterIntensity, alienationPercent, alienationPulse, isPerspective }) {
   return (
     <section className="af-panel af-roster-panel">
       <h2>{ui.groupNotes}</h2>
@@ -471,9 +498,36 @@ function GroupRoster({ currentSpeaker, revealedIds, lang, ui }) {
         {Object.entries(CHARACTERS).map(([id, character]) => {
           const revealed = revealedIds.has(id)
           const active   = id === currentSpeaker
+          const isEvan   = id === 'evan'
+          const stage    = getAlienationStage(alienationPercent, isPerspective && isEvan)
+
+          const showRosterAlienation = isEvan && alienationPercent > 8 && !isPerspective
+          const showPerspectiveCleared = isEvan && isPerspective
+          const showAlienationMeter = isEvan && (showRosterAlienation || showPerspectiveCleared)
+          const displayPercent = showPerspectiveCleared
+            ? Math.max(8, Math.round(alienationPercent * 0.24))
+            : alienationPercent
+          const rosterIntensity = showRosterAlienation
+            ? Math.max(0.52, alienFilterIntensity)
+            : showPerspectiveCleared
+              ? 0.24
+              : alienFilterIntensity
+          const shift = isEvan && alienationPulse && !isPerspective ? alienationPulse.delta : 0
+          const shiftText = shift > 0 ? `+${shift}` : `${shift}`
+
           return (
-            <div className={`af-roster-item ${active ? 'active' : ''}`} key={id}>
-              <div className="af-character-face" style={{ borderColor: character.color }}>
+            <div
+              className={`af-roster-item ${active ? 'active' : ''} ${showRosterAlienation ? `alienating alien-stage-${stage.id}` : ''} ${showPerspectiveCleared ? 'alienation-cleared' : ''}`}
+              key={id}
+              style={isEvan ? {
+                '--alien-intensity': rosterIntensity.toFixed(3),
+                '--alien-progress': `${displayPercent}%`,
+              } : undefined}
+            >
+              <div
+                className={`af-character-face ${showRosterAlienation ? 'alienating' : ''} ${showPerspectiveCleared ? 'alienation-cleared' : ''}`}
+                style={{ borderColor: character.color }}
+              >
                 <img src={character.portrait} alt={character.name} />
               </div>
               <div className="af-roster-copy">
@@ -484,6 +538,28 @@ function GroupRoster({ currentSpeaker, revealedIds, lang, ui }) {
                 <div className={`af-roster-detail ${revealed ? 'revealed' : ''}`}>
                   {revealed ? storyText(character.revealedInfo, lang) : ui.noDetailYet}
                 </div>
+                {showAlienationMeter && (
+                  <div className={`af-roster-alien-block ${showPerspectiveCleared ? 'cleared' : ''}`}>
+                    <div className={`af-roster-alien-status af-roster-alien-status-${stage.id}`}>
+                      <span className="af-roster-alien-dot" />
+                      <span>{lang === 'zh' ? stage.zh : stage.en}</span>
+                      {shift !== 0 && (
+                        <span className={`af-roster-alien-shift ${shift > 0 ? 'up' : 'down'}`} key={alienationPulse.id}>
+                          {shiftText}
+                        </span>
+                      )}
+                    </div>
+                    <div className="af-roster-alien-meter">
+                      <div className="af-roster-alien-meter-row">
+                        <span>{lang === 'zh' ? '异化程度' : 'Alienation'}</span>
+                        <strong>{showPerspectiveCleared ? (lang === 'zh' ? '减弱中' : 'fading') : `${alienationPercent}%`}</strong>
+                      </div>
+                      <div className="af-roster-alien-track">
+                        <div className="af-roster-alien-fill" />
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
               {active && <span className="af-speaking-dot">{ui.speakingNow}</span>}
             </div>
@@ -493,7 +569,6 @@ function GroupRoster({ currentSpeaker, revealedIds, lang, ui }) {
     </section>
   )
 }
-
 function Meter({ label, value, color }) {
   return (
     <div className="af-meter">
@@ -530,6 +605,7 @@ export default function AlienMainPage() {
   const [showEnding,      setShowEnding]      = useState(saved?.showEnding      ?? false)
   const [isLoading,       setIsLoading]       = useState(false)
   const [loadingFor,      setLoadingFor]      = useState(null) // suggestedReply index, 'freeText', or 'init'
+  const [alienationPulse, setAlienationPulse] = useState(null) // { id, delta } for the Evan roster feedback
 
   // ── Chapter 2 lunch outcome — derived once when the lunch chapter ends ────
   // 'joined' | 'ambivalent' | 'declined' | null (not yet determined)
@@ -556,6 +632,9 @@ export default function AlienMainPage() {
   // One AbortController per turn — replaces all manual ref/timeout comparisons.
   const abortRef = useRef(null)
 
+  // Ref for the inner scrollable dialogue container — used to auto-scroll to newest message
+  const dialogueScrollRef = useRef(null)
+
   const scene   = SCENES[sceneIndex]
   const speaker = CHARACTERS[scene.speaker]
   const ending  = useMemo(() => getEnding(scores, hidden), [scores, hidden])
@@ -563,6 +642,33 @@ export default function AlienMainPage() {
     () => new Set(SCENES.slice(0, sceneIndex + 1).map(s => s.speaker)),
     [sceneIndex],
   )
+
+  const alienationPercent = useMemo(() => getAlienationPercent(hidden), [hidden])
+  const alienationStage = useMemo(
+    () => getAlienationStage(alienationPercent, !!scene.perspective),
+    [alienationPercent, scene.perspective],
+  )
+
+  // Main-scene filter is disabled in Evan's perspective, but the roster keeps
+  // showing a cleared/fading state so players notice the contrast.
+  const alienFilterIntensity = useMemo(() => {
+    if (scene.perspective) return 0
+    return Math.min(1, Math.max(0, alienationPercent / 100))
+  }, [alienationPercent, scene.perspective])
+  // ── auto-scroll dialogue to the newest message ───────────────────────────
+  useEffect(() => {
+    const el = dialogueScrollRef.current
+    if (!el) return
+    // Small rAF delay so the DOM has painted the new bubble before we scroll
+    requestAnimationFrame(() => {
+      el.scrollTop = el.scrollHeight
+    })
+  }, [chapterMessages, isLoading])
+  useEffect(() => {
+    if (!alienationPulse) return
+    const timer = setTimeout(() => setAlienationPulse(null), 2200)
+    return () => clearTimeout(timer)
+  }, [alienationPulse])
 
   // ── dialogue history for the NPC prompt (from chapterMessages) ───────────
   // Converts the live chapterMessages array into the {role, text, action} format
@@ -662,6 +768,20 @@ export default function AlienMainPage() {
 
     // 1. Persist session entry
     gsActions.saveAlienSession(summary)
+
+    // 1b. Save run to ending-collection / history (alienStory_history_v1)
+    saveStoryRun({
+      endingId:   endingSlug(endingSnapshot.name),
+      endingName: endingSnapshot.name,
+      overall:    endingSnapshot.overall,
+      badge:      endingSnapshot.badge,
+      summary:    endingSnapshot.summary,
+      quote:      endingSnapshot.quote,
+      scores,
+      hidden,
+      choices,
+      playedAt:   new Date().toISOString(),
+    })
 
     // 2. Award XP (same formula as Practice Mode — hard tier)
     const xpGain = calculateXpGain(composite, 'hard')
@@ -838,6 +958,7 @@ export default function AlienMainPage() {
     const nextScores  = applyDelta(scores, scoreDeltas ?? FALLBACK_SCORE_DELTAS)
     const nextHidden  = applyDelta(hidden,  stateDeltas ?? FALLBACK_STATE_DELTAS)
     const nextTurn    = turnCount + 1
+    const alienationDelta = getAlienationPercent(nextHidden) - getAlienationPercent(hidden)
 
     setScores(nextScores)
     setHidden(nextHidden)
@@ -845,6 +966,9 @@ export default function AlienMainPage() {
     setFinalText('')
     setIsLoading(false)
     setLoadingFor(null)
+    if (alienationDelta !== 0) {
+      setAlienationPulse({ id: Date.now(), delta: alienationDelta })
+    }
 
     // Append player bubble + NPC response to chapterMessages.
     // npcAction (third-person narration) is stored on the message object separately
@@ -1214,6 +1338,7 @@ export default function AlienMainPage() {
     setShowEnding(false)
     setIsLoading(false)
     setLoadingFor(null)
+    setAlienationPulse(null)
     setTurnCount(0)
     setChapterMessages([])
     setSuggestedReplies([])
@@ -1280,6 +1405,9 @@ export default function AlienMainPage() {
               <div className="af-report-actions">
                 <button className="af-action-button primary" onClick={restart}>
                   {ui.replay}
+                </button>
+                <button className="af-action-button" onClick={() => navigate('/story-history')}>
+                  {lang === 'zh' ? '故事历史' : 'Story History'}
                 </button>
                 <button className="af-action-button" onClick={() => navigate('/')}>
                   {ui.backHome}
@@ -1401,14 +1529,30 @@ export default function AlienMainPage() {
         <main className="af-stage">
           <section
             className={`af-visual ${scene.perspective ? 'perspective' : ''}`}
-            style={{ backgroundImage: `url("${scene.background}")` }}
+            style={{
+              backgroundImage: `url("${scene.background}")`,
+              '--alien-intensity': alienFilterIntensity.toFixed(3),
+            }}
+            data-alien-active={scene.speaker === 'evan' && alienFilterIntensity > 0.05 && !scene.perspective ? 'true' : 'false'}
           >
             <img
               key={scene.speaker}
               src={speaker.fullbody}
               alt={speaker.name}
-              className={`af-character-fullbody ${scene.perspective ? 'flipped' : ''}`}
+              className={`af-character-fullbody ${scene.perspective ? 'flipped' : ''}${scene.speaker === 'evan' && alienFilterIntensity > 0.05 && !scene.perspective ? ` alien-filter alien-stage-${alienationStage.id}` : ''}`}
+              style={{ '--alien-intensity': alienFilterIntensity.toFixed(3) }}
             />
+
+            {/* Alien filter badge — only when Evan is the speaker, not perspective, above threshold */}
+            {scene.speaker === 'evan' && alienFilterIntensity > 0.18 && !scene.perspective && (
+              <div
+                className="af-alien-filter-badge"
+                style={{ opacity: Math.min(1, (alienFilterIntensity - 0.18) * 5) }}
+              >
+                <div className="af-alien-filter-badge-dot" />
+                {lang === 'zh' ? '感知过滤中' : 'Perception Filtered'}
+              </div>
+            )}
 
             <div className="af-scene-content">
               <div className="af-scene-top">
@@ -1441,86 +1585,114 @@ export default function AlienMainPage() {
                 <span className="af-pill">{ui.alienFilter}</span>
               </div>
 
-              {/* Authored opening line (always visible, dimmed after first turn) */}
-              <div
-                className="af-line"
-                style={chapterMessages.length > 0 ? { opacity: 0.4, fontSize: '13px' } : undefined}
-              >
-                "{p(scene.line)}"
-              </div>
-              <p
-                className="af-narration"
-                style={chapterMessages.length > 0 ? { opacity: 0.35 } : undefined}
-              >
-                {p(
-                  (scene.narrationVariants && didEvanJoinLunch)
-                    ? (scene.narrationVariants[didEvanJoinLunch] ?? scene.narration)
-                    : scene.narration,
-                )}
-              </p>
+              {/* ── Scrollable conversation area ─────────────────────────── */}
+              <div className="af-dialogue-scroll" ref={dialogueScrollRef}>
 
-              {/* Live conversation history (player + NPC bubbles) */}
-              {chapterMessages.length > 0 && (
-                <div style={{ marginTop: '14px', display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {chapterMessages.map((msg, i) => {
-                    if (msg.role === 'user') {
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            alignSelf: 'flex-end',
-                            maxWidth: '80%',
-                            padding: '10px 12px',
-                            borderRadius: '12px',
-                            background: 'rgba(237,235,228,0.12)',
-                            border: '1px solid rgba(237,235,228,0.2)',
-                            fontSize: '14px',
-                            color: '#EDEBE4',
-                          }}
-                        >
-                          {msg.text}
-                        </div>
-                      )
-                    }
-                    // NPC action narration (if present) + spoken bubble
+                {/* Authored opening line (always visible, dimmed after first turn) */}
+                <div
+                  className="af-line"
+                  style={chapterMessages.length > 0 ? { opacity: 0.4, fontSize: '13px' } : undefined}
+                >
+                  "{p(scene.line)}"
+                </div>
+                <p
+                  className="af-narration"
+                  style={chapterMessages.length > 0 ? { opacity: 0.35 } : undefined}
+                >
+                  {p(
+                    (scene.narrationVariants && didEvanJoinLunch)
+                      ? (scene.narrationVariants[didEvanJoinLunch] ?? scene.narration)
+                      : scene.narration,
+                  )}
+                </p>
+
+                {/* Live conversation history (player + NPC bubbles) */}
+                {chapterMessages.map((msg, i) => {
+                  if (msg.role === 'user') {
                     return (
-                      <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: 'flex-start', maxWidth: '85%' }}>
-                        {msg.action && (
-                          <p style={{
-                            margin: 0,
-                            fontSize: '12px',
-                            lineHeight: 1.5,
-                            color: 'rgba(237,235,228,0.55)',
-                            fontStyle: 'italic',
-                            paddingLeft: '4px',
-                            borderLeft: `2px solid ${speaker.color}44`,
-                          }}>
-                            {msg.action}
-                          </p>
-                        )}
-                        <div
-                          style={{
-                            padding: '10px 12px',
-                            borderRadius: '12px',
-                            border: `1.5px solid ${speaker.color}`,
-                            background: `rgba(${speaker.color === '#9B6B8C' ? '155,107,140' : speaker.color === '#8A8FA3' ? '138,143,163' : speaker.color === '#FFD166' ? '255,209,102' : '212,165,116'},0.10)`,
-                          }}
-                        >
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
-                            <img src={speaker.portrait} alt={speaker.name} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />
-                            <span style={{ fontSize: '11px', fontWeight: 800, color: speaker.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                              {speaker.name}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '14px', lineHeight: 1.5, color: '#EDEBE4', fontStyle: 'italic' }}>
-                            {msg.text}
-                          </div>
-                        </div>
+                      <div
+                        key={i}
+                        style={{
+                          alignSelf: 'flex-end',
+                          maxWidth: '80%',
+                          padding: '10px 12px',
+                          borderRadius: '12px',
+                          background: 'rgba(237,235,228,0.12)',
+                          border: '1px solid rgba(237,235,228,0.2)',
+                          fontSize: '14px',
+                          color: '#EDEBE4',
+                        }}
+                      >
+                        {msg.text}
                       </div>
                     )
-                  })}
-                </div>
-              )}
+                  }
+                  // NPC action narration (if present) + spoken bubble
+                  return (
+                    <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '6px', alignSelf: 'flex-start', maxWidth: '85%' }}>
+                      {msg.action && (
+                        <p style={{
+                          margin: 0,
+                          fontSize: '12px',
+                          lineHeight: 1.5,
+                          color: 'rgba(237,235,228,0.55)',
+                          fontStyle: 'italic',
+                          paddingLeft: '4px',
+                          borderLeft: `2px solid ${speaker.color}44`,
+                        }}>
+                          {msg.action}
+                        </p>
+                      )}
+                      <div
+                        style={{
+                          padding: '10px 12px',
+                          borderRadius: '12px',
+                          border: `1.5px solid ${speaker.color}`,
+                          background: `rgba(${speaker.color === '#9B6B8C' ? '155,107,140' : speaker.color === '#8A8FA3' ? '138,143,163' : speaker.color === '#FFD166' ? '255,209,102' : '212,165,116'},0.10)`,
+                        }}
+                      >
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                          <img src={speaker.portrait} alt={speaker.name} style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover' }} />
+                          <span style={{ fontSize: '11px', fontWeight: 800, color: speaker.color, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+                            {speaker.name}
+                          </span>
+                        </div>
+                        <div style={{ fontSize: '14px', lineHeight: 1.5, color: '#EDEBE4', fontStyle: 'italic' }}>
+                          {msg.text}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+
+                {/* NPC typing / thinking indicator — shown while waiting for NPC reply */}
+                {isLoading && (
+                  <div className="af-typing-indicator">
+                    <div
+                      className="af-typing-bubble"
+                      style={{
+                        border: `1.5px solid ${speaker.color}88`,
+                        background: `rgba(${speaker.color === '#9B6B8C' ? '155,107,140' : speaker.color === '#8A8FA3' ? '138,143,163' : speaker.color === '#FFD166' ? '255,209,102' : '212,165,116'},0.08)`,
+                      }}
+                    >
+                      <img
+                        src={speaker.portrait}
+                        alt={speaker.name}
+                        style={{ width: '20px', height: '20px', borderRadius: '50%', objectFit: 'cover', flexShrink: 0 }}
+                      />
+                      <div className="af-typing-dots">
+                        <span /><span /><span />
+                      </div>
+                    </div>
+                    <span className="af-typing-label">
+                      {lang === 'zh'
+                        ? `${speaker.name} 正在回应…`
+                        : `${speaker.name} is thinking…`}
+                    </span>
+                  </div>
+                )}
+
+              </div>{/* end .af-dialogue-scroll */}
             </div>
           </section>
 
@@ -1530,6 +1702,10 @@ export default function AlienMainPage() {
               revealedIds={revealedCharacterIds}
               lang={lang}
               ui={ui}
+              alienFilterIntensity={alienFilterIntensity}
+              alienationPercent={alienationPercent}
+              alienationPulse={alienationPulse}
+              isPerspective={!!scene.perspective}
             />
 
             {/* Turn counter + chapter progress indicator */}
@@ -1544,37 +1720,64 @@ export default function AlienMainPage() {
             {!awaitingChapterAdvance && !initLoading && suggestedReplies.length > 0 && (
               <section className="af-panel">
                 <h2>{ui.chooseResponse || 'Suggested Replies'}</h2>
-                <div className="af-choice-list">
-                  {suggestedReplies.map((reply, index) => {
-                    const loading  = isLoading && loadingFor === index
-                    const lineText = reply.text ?? reply.line ?? ''
-                    return (
-                      <button
-                        key={index}
-                        className="af-choice-button"
-                        onClick={() => submitSuggestedReply(index)}
-                        disabled={isLoading}
-                        style={{ opacity: isLoading && loadingFor !== index ? 0.5 : 1 }}
-                      >
-                        <span className="af-choice-label" style={{ fontSize: '10px', opacity: 0.6 }}>
-                          {reply.style || `Option ${index + 1}`}
-                        </span>
-                        <span className="af-choice-text">
-                          {loading ? '…' : lineText}
-                        </span>
-                      </button>
-                    )
-                  })}
-                </div>
+                {/* While the NPC reply + next batch of suggestions are loading, show skeleton */}
+                {isLoading ? (
+                  <div className="af-skeleton-list">
+                    {suggestedReplies.map((_, i) => (
+                      <div key={i} className="af-skeleton-card">
+                        <div className="af-skeleton-label" />
+                        <div className="af-skeleton-line" />
+                        <div className="af-skeleton-line" />
+                      </div>
+                    ))}
+                    <div className="af-skeleton-status">
+                      <div className="af-skeleton-status-dots">
+                        <span /><span /><span />
+                      </div>
+                      {lang === 'zh' ? '正在生成回应选项…' : 'Generating response options…'}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="af-choice-list">
+                    {suggestedReplies.map((reply, index) => {
+                      const lineText = reply.text ?? reply.line ?? ''
+                      return (
+                        <button
+                          key={index}
+                          className="af-choice-button"
+                          onClick={() => submitSuggestedReply(index)}
+                          disabled={isLoading}
+                        >
+                          <span className="af-choice-label" style={{ fontSize: '10px', opacity: 0.6 }}>
+                            {reply.style || `Option ${index + 1}`}
+                          </span>
+                          <span className="af-choice-text">{lineText}</span>
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
               </section>
             )}
 
-            {/* Loading state for initial suggestions */}
+            {/* Loading state for initial suggestions (very first turn) */}
             {initLoading && !awaitingChapterAdvance && (
               <section className="af-panel">
                 <h2>{ui.chooseResponse || 'Suggested Replies'}</h2>
-                <div style={{ padding: '20px', textAlign: 'center', color: 'rgba(237,235,228,0.5)', fontSize: '13px' }}>
-                  Generating suggestions…
+                <div className="af-skeleton-list">
+                  {[0,1,2].map(i => (
+                    <div key={i} className="af-skeleton-card">
+                      <div className="af-skeleton-label" />
+                      <div className="af-skeleton-line" />
+                      <div className="af-skeleton-line" />
+                    </div>
+                  ))}
+                  <div className="af-skeleton-status">
+                    <div className="af-skeleton-status-dots">
+                      <span /><span /><span />
+                    </div>
+                    {lang === 'zh' ? '正在生成回应选项…' : 'Generating response options…'}
+                  </div>
                 </div>
               </section>
             )}
