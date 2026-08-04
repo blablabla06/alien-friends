@@ -69,7 +69,16 @@ app.post('/api/chat', async (req, res) => {
       timeout: 14_000,   // 14 s — just under the browser-side 15 s AbortController
     })
 
-    const text = response.choices?.[0]?.message?.content
+    // const text = response.choices?.[0]?.message?.content
+    const choice = response.choices?.[0]
+    const text = choice?.message?.content
+
+    // 诊断：如果返回空内容，打印完整的 finish_reason 和原始 choice 内容
+    if (!text || text.trim() === '') {
+      console.error('[server] Empty response — finish_reason:', choice?.finish_reason)
+      console.error('[server] Full choice object:', JSON.stringify(choice, null, 2))
+      console.error('[server] Full usage:', JSON.stringify(response.usage, null, 2))
+    }
 
     if (typeof text !== 'string') {
       console.error('[server] Unexpected response shape:', JSON.stringify(response))

@@ -9,7 +9,7 @@
 
 const LANG_INSTRUCTIONS = {
   zh: `## Language
-ALL of your output — npcResponse, suggestedReplies, and any other text fields — MUST be written in Simplified Chinese (简体中文). Do not use English in any field of your JSON response, even for style labels.`,
+ALL of your output — npcAction, npcResponse, suggestedReplies, and any other text fields — MUST be written in Simplified Chinese (简体中文). Do not use English in any field of your JSON response, even for style labels.`,
   en: `## Language
 ALL of your output MUST be in English.`,
 }
@@ -129,7 +129,7 @@ export function buildCharacterPrompt(character, scenario, dialogueHistory, userI
     messages.push({ role: 'user', content: entry.text })
   } else {
     const reconstructed = JSON.stringify({
-      npcAction: entry.action ?? null,
+      npcAction:  entry.npcAction ?? null,
       npcResponse: entry.text,
       moodShift: 'neutral',
     })
@@ -169,12 +169,25 @@ CRITICAL: npcResponse must contain ONLY spoken dialogue — put any physical act
 
   const messages = [{ role: 'system', content: system }]
 
+  // for (const entry of dialogueHistory) {
+  //   messages.push({
+  //     role:    entry.role === 'user' ? 'user' : 'assistant',
+  //     content: entry.text,
+  //   })
+  // }
+
   for (const entry of dialogueHistory) {
-    messages.push({
-      role:    entry.role === 'user' ? 'user' : 'assistant',
-      content: entry.text,
+  if (entry.role === 'user') {
+    messages.push({ role: 'user', content: entry.text })
+  } else {
+    const reconstructed = JSON.stringify({
+      npcAction: entry.npcAction ?? null,
+      npcResponse: entry.text,
+      moodShift: 'neutral',
     })
+    messages.push({ role: 'assistant', content: reconstructed })
   }
+}
 
   return messages
 }
@@ -308,7 +321,7 @@ export function buildAlienNpcPrompt(
     : ''
 
   const langBlock = lang === 'zh'
-    ? `\n## Language — applies to every field, no exceptions\nWrite EVERY field in Simplified Chinese (简体中文), including:\n- npcResponse (spoken dialogue)\n- npcAction (physical/emotional narration — this is NOT exempt, even though it describes actions rather than speech)\n- every "text" value inside suggestedReplies\nDo not leave any single field in English, even if it feels more like narration/description than spoken dialogue. ${character.name} himself speaks Chinese, and so does the narration describing him.`
+    ? `\n## Language — applies to every field, no exceptions\nWrite EVERY field in Simplified Chinese (简体中文), including:\n- npcResponse (spoken dialogue)\n- npcAction (physical/emotional narration — this is NOT exempt, even though it describes actions rather than speech)\nDo not leave any single field in English, even if it feels more like narration/description than spoken dialogue. ${character.name} himself speaks Chinese, and so does the narration describing him.`
     : ''
 
   const finalTurnExample = lang === 'zh'

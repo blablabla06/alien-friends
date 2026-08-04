@@ -121,6 +121,15 @@ export default function DialogueScreen() {
     }
   }, [scenario, scenarioId, navigate])
 
+  // ── 恢复会话时，如果已达到 maxTurns，直接跳转到成长报告页面 ──
+  useEffect(() => {
+    if (!scenario) return
+    const maxTurns = scenario.maxTurns ?? 6
+    if (turnCount >= maxTurns) {
+    navigate('/ending')
+    }
+  }, []) // eslint-disable-line
+
   // ── Opening line fires once on mount ──
   // DialogueScreen is only reachable via ScenarioIntroPage → "Start Conversation",
   // so by the time this component mounts the player has already seen the intro.
@@ -465,7 +474,7 @@ export default function DialogueScreen() {
         {/* Left — back arrow + avatar + name as one clickable group */}
         <button
           className="flex items-center gap-2 group focus:outline-none"
-          onClick={() => navigate('/')}
+          onClick={() => navigate(`/intro/${scenario.id}`)}
           aria-label="Back to Home"
           style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
         >
