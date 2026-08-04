@@ -1,0 +1,9 @@
+4th version -- 30 July 2027
+- refined all the language part
+- identified the model will response with {npcReply} instead of {npcReply && nextSuggestedReplies} and fixed it
+
+
+5th version -- 31 July 2027
+- Added voice (mp3 files) for all characters' initial dialogue
+- Changed to use DeepSeek API insetad of Tencet Cloud
+- remove unused function in llmClient.js and aiCharacterPrompt.js
