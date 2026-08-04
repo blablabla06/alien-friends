@@ -4,6 +4,7 @@ import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
 import { useMusic, useMusicTrack } from '../context/MusicContext.jsx'
 import { hasCompletedStory, HISTORY_KEY } from '../lib/alienStoryHistory.js'
+import { loadActiveSession } from '../lib/persistence.js'
 import LevelBadge from '../components/LevelBadge.jsx'
 import StreakTracker from '../components/StreakTracker.jsx'
 import DailyMissionCard from '../components/DailyMissionCard.jsx'
@@ -79,9 +80,15 @@ export default function HomePage() {
 
   function handlePortrait(scenario) {
     const character = characters[scenario.npcRef]
-    actions.startScenario(scenario, character)
+    const saved = loadActiveSession(scenario.id)
+    if (saved) {
+      actions.restoreSession(saved)
+    } else {
+      actions.startScenario(scenario, character)
+    }
     navigate(`/intro/${scenario.id}`)
   }
+  
 
   return (
     <div className="min-h-screen flex flex-col items-center px-4 py-10 gap-7 max-w-lg mx-auto">
@@ -113,27 +120,10 @@ export default function HomePage() {
                   : { color: '#EDEBE4', opacity: 0.5 }
               }
             >
-              {l === 'en' ? 'EN' : 'ZH'}
+              {l === 'en' ? 'EN' : '中文'}
             </button>
           ))}
         </div>
-
-        {/* Mute / unmute voice */}
-        {/* <button
-          onClick={toggleMute}
-          aria-label={isMuted ? 'Unmute voice' : 'Mute voice'}
-          title={isMuted ? 'Unmute voice' : 'Mute voice'}
-          className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
-          style={{
-            width: '34px',
-            height: '34px',
-            fontSize: '16px',
-            backgroundColor: 'rgba(255,255,255,0.07)',
-            border: '1px solid rgba(255,255,255,0.12)',
-          }}
-        >
-          {isMuted ? '🔇' : '🔊'}
-        </button> */}
 
         {/* Mute / unmute music */}
         <button

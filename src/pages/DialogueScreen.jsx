@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
+import { useMusic } from '../context/MusicContext.jsx'
 
 import { buildCharacterPrompt, buildClosingPrompt, buildSuggestionOnlyPrompt } from '../lib/aiCharacterPrompt.js'
 import { extractCleanDialogue } from '../lib/npcResponseParser.js'
@@ -29,7 +30,6 @@ const BG_MAP = {
   '/assets/backgrounds/meeting-room.png':    bgMeetingRoom,
   '/assets/backgrounds/park-bench.png':      bgParkBench,
   '/assets/backgrounds/study-room.png':      bgStudyRoom,
-  // '/assets/backgrounds/discussion-room.png': bgDiscussionRoom,
   '/assets/backgrounds/home-kitchen.png':    bgHomeKitchen,
   '/assets/backgrounds/supermarket.png':     bgSupermarket,
 }
@@ -93,6 +93,8 @@ export default function DialogueScreen() {
   const { currentScenario: scenario, currentCharacter: character, dialogueHistory, connectionMood, turnCount, currentScores } = state
   const liveComposite = currentScores?.composite ?? 0
 
+  const { isMusicMuted, toggleMusicMute } = useMusic()
+
   const [inputText, setInputText]         = useState('')
   const [suggestions, setSuggestions]     = useState([])
   const [isLoading, setIsLoading]         = useState(false)
@@ -127,6 +129,8 @@ export default function DialogueScreen() {
     if (openingFiredRef.current) return
     openingFiredRef.current = true
 
+    if (dialogueHistory.length > 0) return
+
     const { cleanDialogue: openingDialogue, combinedNarration: openingNarration } =
       extractCleanDialogue(resolveField(scenario.openingLine, lang), null)
       actions.addDialogueEntry({
@@ -144,6 +148,11 @@ export default function DialogueScreen() {
   useEffect(() => {
     if (!character) return
 
+    // Only play the opening voice clip for a genuinely fresh conversation —
+    // if dialogueHistory already has entries, this is a restored session and
+    // the opening line's voice clip was already heard in the earlier session.
+    if (dialogueHistory.length > 0) return
+    
     // Stop any clip that might still be playing from a previous scenario
     if (audioRef.current) {
       audioRef.current.pause()
@@ -442,7 +451,7 @@ export default function DialogueScreen() {
       )}
       {/* All content sits above the overlays — flex column, constrained to viewport height */}
       <div className="relative flex flex-col" style={{ zIndex: 2, height: '100dvh' }}>
-      {/* ── Sticky header — sticks to top of the viewport scroll ── */}
+      {/* ── Sticky header ── */}
       <div
         className="flex-shrink-0 flex items-center justify-between px-4 pt-5 pb-3 border-b border-white/10"
         style={{
@@ -453,12 +462,38 @@ export default function DialogueScreen() {
           backdropFilter: 'blur(12px)',
         }}
       >
-        <NpcAvatar characterId={character.id} name={character.name} />
-        <div className="flex items-center gap-4">
+        {/* Left — back arrow + avatar + name as one clickable group */}
+        <button
+          className="flex items-center gap-2 group focus:outline-none"
+          onClick={() => navigate('/')}
+          aria-label="Back to Home"
+          style={{ background: 'none', border: 'none', padding: 0, cursor: 'pointer' }}
+        >
+          <span
+            className="text-warm-white transition-opacity group-hover:opacity-100"
+            style={{ fontSize: '28px', opacity: 0.55, lineHeight: 1, marginRight: '2px' }}
+            aria-hidden="true"
+          >
+            ‹
+          </span>
+          <NpcAvatar characterId={character.id} name={character.name} />
+        </button>
+
+        {/* Right — turn counter + mood meter + music mute */}
+        <div className="flex items-center gap-3 flex-shrink-0">
           <span className="text-xs text-warm-white opacity-40">
             {turnCount}/{maxTurns}
           </span>
           <MoodMeter mood={connectionMood} />
+          <button
+            className="af-ghost-button"
+            aria-label={isMusicMuted ? 'Unmute music' : 'Mute music'}
+            title={isMusicMuted ? 'Unmute music' : 'Mute music'}
+            onClick={toggleMusicMute}
+            style={{ fontSize: '16px', padding: '4px 8px', lineHeight: 1 }}
+          >
+            {isMusicMuted ? '🎵' : '🎶'}
+          </button>
         </div>
       </div>
 

@@ -29,3 +29,4 @@
 
 7th version -- 4 August 2026
 - added background music
+- add back button and mute button at DialogueScreen

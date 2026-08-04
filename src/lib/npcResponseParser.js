@@ -30,7 +30,7 @@
  * spoken dialogue, so this regex is the only delimiter needed.
  * Non-greedy so adjacent quoted segments are captured separately.
  */
-const QUOTE_RE = /"((?:[^"\\]|\\.)*)"/g
+const QUOTE_RE = /["'「""]((?:[^"'」""\\]|\\.)*?)["'」""]/g
 
 /**
  * Extract clean spoken dialogue and merged narration from a raw npcResponse string.

@@ -64,8 +64,7 @@ ${langInstruction(lang)}
 You must ALWAYS respond with valid JSON and nothing else:
 {
   "npcAction": "<optional: brief third-person narration of ${character.name}'s physical or emotional behaviour, e.g. 'Alex's mouth quirks into a half-smile.' — write null if there is no distinct action>",
-  "npcResponse": "<ONLY the spoken dialogue — the exact words ${character.name} says, 1-3 sentences, natural spoken language. NO stage directions, NO third-person narration, NO action descriptions inside this field. If the character would naturally speak in two separate bursts with narration in between, merge them into one continuous spoken block.>",
-  "suggestedReplies": [
+  "npcResponse": "<ONLY the spoken dialogue — the exact words ${character.name} says, 1-3 sentences, natural spoken language. Do NOT wrap this text in quotation marks of any kind (no \"\", no '', no「」, no "") — since this field is already understood to be spoken dialogue, quotation marks are unnecessary and must be omitted. NO stage directions, NO third-person narration, NO action descriptions inside this field. If the character would naturally speak in two separate bursts with narration in between, merge them into one continuous spoken block.>",  "suggestedReplies": [
     { "text": "<words the player says, first person, 8-15 words>", "style": "${scenario.suggestedReplyStyles?.[0] ?? 'neutral'}" },
     { "text": "<words the player says, first person, 8-15 words>", "style": "${scenario.suggestedReplyStyles?.[1] ?? 'neutral'}" },
     { "text": "<words the player says, first person, 8-15 words>", "style": "${scenario.suggestedReplyStyles?.[2] ?? 'neutral'}" }
@@ -75,7 +74,6 @@ You must ALWAYS respond with valid JSON and nothing else:
 
 CRITICAL for npcResponse: it must contain ONLY the words ${character.name} actually speaks — no stage directions, no third-person narration, no text that would appear outside quotation marks in a novel. Put any physical/emotional action in npcAction instead.
 - If ${character.name} pauses between two lines of dialogue, or any action beat occurs mid-speech, describe ALL of those action beats together in npcAction as one combined narration (e.g. "${character.name}'s mouth quirks into a half-smile. She pauses, then adds:") — never split action text across multiple places or leave any narration unquoted inside npcResponse.
-CRITICAL — quote style: always wrap spoken dialogue in double quotes ("…"). Never use single quotes as dialogue delimiters. Single quotes are reserved exclusively for contractions within the text (don't, I'm, you're, it's, etc.).
 CRITICAL for suggestedReplies: each option is what the PLAYER says — never the NPC.
 - "text": the actual words the player would say, first person (e.g. "Yeah. You too.").
 - Plain dialogue only — no brackets, stage directions, or action descriptions.
@@ -127,11 +125,17 @@ export function buildCharacterPrompt(character, scenario, dialogueHistory, userI
   const messages = [{ role: 'system', content: system }]
 
   for (const entry of dialogueHistory) {
-    messages.push({
-      role:    entry.role === 'user' ? 'user' : 'assistant',
-      content: entry.text,
+  if (entry.role === 'user') {
+    messages.push({ role: 'user', content: entry.text })
+  } else {
+    const reconstructed = JSON.stringify({
+      npcAction: entry.action ?? null,
+      npcResponse: entry.text,
+      moodShift: 'neutral',
     })
+    messages.push({ role: 'assistant', content: reconstructed })
   }
+}
 
   messages.push({ role: 'user', content: userInput })
 
