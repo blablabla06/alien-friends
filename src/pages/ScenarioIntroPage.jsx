@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
+import { useMusicTrack } from '../context/MusicContext.jsx'
 
 import strangerImg       from '../assets/avatars/stranger.png'
 import jamieImg          from '../assets/avatars/coworker-jamie.png'
@@ -41,6 +42,10 @@ export default function ScenarioIntroPage() {
   const { state, actions } = useGameState()
   const { lang, t } = useLang()
   const { currentScenario: scenario, currentCharacter: character, connectionMood } = state
+
+  // Switch to practice music as soon as the intro page mounts
+  // (stops home.mp3 and starts practice.mp3 immediately)
+  useMusicTrack('practice')
 
   useEffect(() => {
     if (!scenario || scenario.id !== scenarioId) {

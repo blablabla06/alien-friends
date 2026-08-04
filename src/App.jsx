@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { GameStateProvider } from './context/GameStateContext.jsx'
 import { LanguageProvider } from './context/LanguageContext.jsx'
+import { MusicProvider } from './context/MusicContext.jsx'
 import HomePage           from './pages/HomePage.jsx'
 
 import ScenarioIntroPage   from './pages/ScenarioIntroPage.jsx'
@@ -15,6 +16,7 @@ export default function App() {
   return (
     <LanguageProvider>
     <GameStateProvider>
+    <MusicProvider>
       <BrowserRouter>
         <Routes>
           <Route path="/"                       element={<HomePage />} />
@@ -27,6 +29,7 @@ export default function App() {
           <Route path="/story-history"          element={<StoryHistoryPage />} />
         </Routes>
       </BrowserRouter>
+    </MusicProvider>
     </GameStateProvider>
     </LanguageProvider>
   )

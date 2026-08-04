@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useGameState } from '../context/GameStateContext.jsx'
 import { useLang, resolveField } from '../context/LanguageContext.jsx'
+import { useMusic, useMusicTrack } from '../context/MusicContext.jsx'
 import { hasCompletedStory, HISTORY_KEY } from '../lib/alienStoryHistory.js'
 import LevelBadge from '../components/LevelBadge.jsx'
 import StreakTracker from '../components/StreakTracker.jsx'
@@ -44,6 +45,8 @@ export default function HomePage() {
   const [isMuted, setIsMuted] = useState(() => {
     try { return localStorage.getItem('af_voice_muted') === 'true' } catch { return false }
   })
+  const { isMusicMuted, toggleMusicMute } = useMusic()
+  useMusicTrack('home')
 
   function toggleMute() {
     const next = !isMuted
@@ -116,7 +119,7 @@ export default function HomePage() {
         </div>
 
         {/* Mute / unmute voice */}
-        <button
+        {/* <button
           onClick={toggleMute}
           aria-label={isMuted ? 'Unmute voice' : 'Mute voice'}
           title={isMuted ? 'Unmute voice' : 'Mute voice'}
@@ -130,6 +133,23 @@ export default function HomePage() {
           }}
         >
           {isMuted ? '🔇' : '🔊'}
+        </button> */}
+
+        {/* Mute / unmute music */}
+        <button
+          onClick={toggleMusicMute}
+          aria-label={isMusicMuted ? 'Unmute music' : 'Mute music'}
+          title={isMusicMuted ? 'Unmute music' : 'Mute music'}
+          className="flex items-center justify-center rounded-full transition-opacity hover:opacity-80"
+          style={{
+            width: '34px',
+            height: '34px',
+            fontSize: '16px',
+            backgroundColor: 'rgba(255,255,255,0.07)',
+            border: '1px solid rgba(255,255,255,0.12)',
+          }}
+        >
+          {isMusicMuted ? '🎵' : '🎶'}
         </button>
       </div>
 

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useLang } from '../context/LanguageContext.jsx'
 import { useGameState } from '../context/GameStateContext.jsx'
+import { useMusic, useMusicTrack } from '../context/MusicContext.jsx'
 import { storyText, storyUi } from '../lib/alienPrototypeI18n.js'
 import { saveStoryRun, endingSlug } from '../lib/alienStoryHistory.js'
 import { buildAlienNpcPrompt, buildPerspectiveShiftPrompt } from '../lib/aiCharacterPrompt.js'
@@ -628,6 +629,10 @@ export default function AlienMainPage() {
     try { return localStorage.getItem('af_voice_muted') === 'true' } catch { return false }
   })
   const audioRef = useRef(null) // tracks the currently playing HTMLAudioElement
+
+  // ── background music ─────────────────────────────────────────────────────
+  const { isMusicMuted, toggleMusicMute } = useMusic()
+  useMusicTrack('main')
 
   // One AbortController per turn — replaces all manual ref/timeout comparisons.
   const abortRef = useRef(null)
@@ -1374,6 +1379,15 @@ export default function AlienMainPage() {
           >
             {isMuted ? '🔇' : '🔊'}
           </button>
+          <button
+            className="af-ghost-button"
+            aria-label={isMusicMuted ? 'Unmute music' : 'Mute music'}
+            title={isMusicMuted ? 'Unmute music' : 'Mute music'}
+            onClick={toggleMusicMute}
+            style={{ fontSize: '16px', padding: '4px 8px', lineHeight: 1 }}
+          >
+            {isMusicMuted ? '🎵' : '🎶'}
+          </button>
           <button className="af-ghost-button" onClick={() => navigate('/')}>
             {ui.home}
           </button>
@@ -1686,8 +1700,8 @@ export default function AlienMainPage() {
                     </div>
                     <span className="af-typing-label">
                       {lang === 'zh'
-                        ? `${speaker.name} 正在回应…`
-                        : `${speaker.name} is thinking…`}
+                        ? `${speaker.name} 正在输入…`
+                        : `${speaker.name} is typing…`}
                     </span>
                   </div>
                 )}
