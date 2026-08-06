@@ -14,7 +14,7 @@
     "zh": "你和山姆曾经是很亲近的朋友——那种无缘无故也会发消息、毫无预兆就登门的朋友，纯粹的友情，从来没有别的什么。然后生活开始做它惯常做的事：时间表各自分叉，一次搬家，一些朋友之间心知肚明却从未开口说破的尴尬。消息越来越短，最后归于沉默。你不止一次想过要主动联系。但你始终没有。今天这个下午，你本来差点留在家里，却在鸭塘边的长椅上看见了山姆——一个人，沉默着，没有刻意等人的样子。两年的友情疏离横亘在你和那张长椅之间，你必须在接下来的几秒钟里决定——是继续走过去，还是停下来。"
   },
   "openingLine": {
-    "en": "Sam looks up, surprised. 'Oh — hey. Wow. It's been a while.' He gives a brief awkward laugh.",
+    "en": "Sam looks up, surprised. \"Oh — hey. Wow. It's been a while.\" He gives a brief awkward laugh.",
     "zh": "山姆抬起头，露出一丝惊讶。\"哦——嘿。哇，好久不见了。\"他短促地笑了一下，有些不自然。"
   },
   "successCondition": "Composite score ≥ 70 and at least one hidden detail revealed",
