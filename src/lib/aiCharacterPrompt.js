@@ -9,7 +9,7 @@
 
 const LANG_INSTRUCTIONS = {
   zh: `## Language
-ALL of your output — npcAction, npcResponse, suggestedReplies, and any other text fields — MUST be written in Simplified Chinese (简体中文). Do not use English in any field of your JSON response, even for style labels.`,
+ALL of your output — npcAction, npcResponse, suggestedReplies, and any other text fields — MUST be written in Simplified Chinese (简体中文). This includes npcAction, even though it describes physical/emotional narration rather than spoken words — it is NOT exempt from this requirement. Do not use English in any field of your JSON response, even for style labels. Reply in Chinese even though there is some english words input from user.`,
   en: `## Language
 ALL of your output MUST be in English.`,
 }
