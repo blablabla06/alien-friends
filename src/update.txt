@@ -33,3 +33,6 @@
 
 8th version -- 5 August 2026
 - fixed practice mode's navigation issue
+
+9th version -- 6 August 2026
+- deploy to cloud

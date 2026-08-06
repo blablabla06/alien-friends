@@ -9,7 +9,7 @@
  */
 
 // In production you'd point this at your deployed API URL.
-const API_BASE = import.meta.env.VITE_API_BASE ?? 'http://localhost:3001'
+const API_BASE = import.meta.env.VITE_API_BASE ?? ''
 
 /** How long to wait before aborting a single attempt (ms). */
 const TIMEOUT_MS = 15_000

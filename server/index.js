@@ -18,8 +18,12 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import OpenAI from 'openai'
+import path from 'path'
+import { fileURLToPath } from 'url'
 
 dotenv.config()
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -71,7 +75,21 @@ app.post('/api/chat', async (req, res) => {
 
     // const text = response.choices?.[0]?.message?.content
     const choice = response.choices?.[0]
-    const text = choice?.message?.content
+    let text = choice?.message?.content
+
+    // 兜底：如果 content 为空，但 reasoning_content 里藏着真实答案
+    // （DeepSeek 有时会把整个分析过程连同最终 JSON 一起塞进 
+    // reasoning_content，而 content 留空），尝试从里面提取最后一个
+    // JSON 对象。
+    if ((!text || text.trim() === '') && choice?.message?.reasoning_content) {
+      console.warn('[server] content 为空，尝试从 reasoning_content 提取 JSON')
+      const reasoning = choice.message.reasoning_content
+      const lastBrace = reasoning.lastIndexOf('{')
+      if (lastBrace !== -1) {
+        text = reasoning.slice(lastBrace)
+      }
+    }
+
 
     // 诊断：如果返回空内容，打印完整的 finish_reason 和原始 choice 内容
     if (!text || text.trim() === '') {
@@ -104,6 +122,13 @@ app.get('/api/health', (_req, res) => {
     message: 'Alien Friends API server is running.',
     credentials: credentialsOk ? 'present' : 'MISSING — set DEEPSEEK_API_KEY in .env',
   })
+})
+
+// ─── Serve built frontend (production) ────────────────────────────────────────
+
+app.use(express.static(path.join(__dirname, '../dist')))
+app.get((req, res) => {
+  res.sendFile(path.join(__dirname, '../dist/index.html'))
 })
 
 // ─── Start ────────────────────────────────────────────────────────────────────
