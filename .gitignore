@@ -9,6 +9,9 @@ node_modules/
 # Vite build output
 dist/
 
+# wrangler (cloud deploy)
+.wrangler
+
 # Logs
 npm-debug.log*
 yarn-debug.log*
@@ -26,3 +29,6 @@ debug/
 Thumbs.db
 
 *.log
+
+#submission files
+submission

@@ -18,12 +18,8 @@ import express from 'express'
 import cors from 'cors'
 import dotenv from 'dotenv'
 import OpenAI from 'openai'
-import path from 'path'
-import { fileURLToPath } from 'url'
 
 dotenv.config()
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 const PORT = process.env.PORT || 3001
@@ -124,16 +120,17 @@ app.get('/api/health', (_req, res) => {
   })
 })
 
-// ─── Serve built frontend (production) ────────────────────────────────────────
-
-app.use(express.static(path.join(__dirname, '../dist')))
-app.use((req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'))
-})
-
 // ─── Start ────────────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
-  console.log(`[server] Listening on http://localhost:${PORT}`)
-  console.log(`[server] Health: http://localhost:${PORT}/api/health`)
+// app.listen(PORT, () => {
+//   console.log(`[server] Listening on http://localhost:${PORT}`)
+//   console.log(`[server] Health: http://localhost:${PORT}/api/health`)
+// })
+
+import { httpServerHandler } from 'cloudflare:node'
+
+const server = app.listen(PORT, () => {
+  console.log(`[server] Listening on port ${PORT}`)
 })
+
+export default httpServerHandler({ port: PORT })
