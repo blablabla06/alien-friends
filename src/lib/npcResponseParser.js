@@ -1,44 +1,5 @@
-/**
- * npcResponseParser.js
- *
- * Defensive post-processing for NPC response text received from the LLM.
- *
- * Models occasionally return responses in an "action – dialogue – action"
- * pattern despite being instructed otherwise, e.g.:
- *
- *   "Alex's mouth quirks. \"You're not wrong.\" He pauses. \"Maybe once.\""
- *
- * extractCleanDialogue ensures:
- *  - npcResponse (the chat bubble) contains ONLY the joined quoted spoken words.
- *  - All narration beats (text outside quotes) are merged into ONE narration string.
- *
- * Usage (both Practice Mode and AlienMainPage):
- *
- *   const { cleanDialogue, combinedNarration } = extractCleanDialogue(
- *     parsed.npcResponse ?? '',
- *     parsed.npcAction   ?? null,
- *   )
- *   // cleanDialogue  → goes into the chat bubble  (entry.text)
- *   // combinedNarration → goes into npcAction      (entry.npcAction)
- */
+const QUOTE_RE = /"([^"]*)"|「([^」]*)」|"([^"]*)"/g
 
-/**
- * Matches only straight-double-quoted ("…") spans, supporting escaped quotes
- * inside (\"). Single quotes are intentionally excluded — they are reserved for
- * contractions (don't, I'm, you're) and must never be treated as dialogue
- * delimiters. The prompt instructs the model to always use double quotes for
- * spoken dialogue, so this regex is the only delimiter needed.
- * Non-greedy so adjacent quoted segments are captured separately.
- */
-const QUOTE_RE = /"([^"]*)"|「([^」]*)」|"([^"]*)"|(?<!\w)'([^']*)'/g
-
-/**
- * Extract clean spoken dialogue and merged narration from a raw npcResponse string.
- *
- * @param {string}      npcResponseRaw - the `npcResponse` value from the LLM (may contain narration)
- * @param {string|null} npcActionRaw   - the `npcAction` value from the LLM (may be null)
- * @returns {{ cleanDialogue: string, combinedNarration: string|null }}
- */
 export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   const raw = String(npcResponseRaw ?? '').trim()
   // ── Step 0: 先剥离括号内容，视为动作 ─────────────────────────────
@@ -46,37 +7,36 @@ export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   const bracketAction = bracketMatches.length ? bracketMatches.join(' ') : null
   const rawWithoutBrackets = raw.replace(/[（(][^）)]+[）)]/g, '').trim()
 
-  // ── Step 1: pull out all quoted spoken segments ────────────────────────────
+  // ── Step 1: 用同一次遍历，同时提取"引号内的对话"和"引号外的叙述" ──
   const quotedSegments = []
+  const narrationParts = []
+  let lastIndex = 0
   let match
   QUOTE_RE.lastIndex = 0
   while ((match = QUOTE_RE.exec(rawWithoutBrackets)) !== null) {
-  const spoken = (match[1] ?? match[2] ?? match[3] ?? match[4] ?? '').trim()
-  if (spoken) quotedSegments.push(spoken)
-}
+    // 引号之前的这段文字（如果非空）算作叙述
+    const before = rawWithoutBrackets.slice(lastIndex, match.index).trim()
+    if (before) narrationParts.push(before)
 
-  // If no quoted segments found the entire npcResponse is treated as plain dialogue
-  // (model complied perfectly or returned a simple unquoted string).
+    const spoken = (match[1] ?? match[2] ?? match[3] ?? '').trim()
+    if (spoken) quotedSegments.push(spoken)
+
+    lastIndex = match.index + match[0].length
+  }
+  // 最后一个引号之后剩余的文字，也算叙述
+  const tail = rawWithoutBrackets.slice(lastIndex).trim()
+  if (tail) narrationParts.push(tail)
+
   const cleanDialogue = quotedSegments.length > 0
     ? quotedSegments.join(' ')
     : rawWithoutBrackets
 
-  // ── Step 2: collect narration — everything OUTSIDE the quotes ─────────────
-  QUOTE_RE.lastIndex = 0
-  const narrationFromResponse = rawWithoutBrackets
-    .split(QUOTE_RE)                    // split on every quoted span (captures too)
-    .filter((_, idx) => idx % 2 === 0) // even indices = outside-quote segments
-    .map(s => s.trim())
-    .filter(Boolean)
-    .join(' ')
-    .trim()
+  const narrationFromResponse = narrationParts.join(' ').trim()
 
-  // ── Step 3: merge npcAction + any narration extracted from npcResponse ─────
+  // ── Step 2: 合并 npcAction + 括号动作 + 从 npcResponse 里提取的叙述 ──
   const parts = [
     npcActionRaw ? String(npcActionRaw).trim() : null,
     bracketAction,
-    // Only include narration-from-response if there were actually quoted segments
-    // (i.e. there was something outside the quotes worth separating out).
     quotedSegments.length > 0 ? narrationFromResponse || null : null,
   ].filter(Boolean)
 

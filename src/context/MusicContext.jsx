@@ -54,7 +54,8 @@ export function MusicProvider({ children }) {
     function tick(now) {
       const elapsed  = now - startTime
       const progress = Math.min(elapsed / durationMs, 1)
-      audio.volume   = startVol + (targetVol - startVol) * progress
+      const nextVol = startVol + (targetVol - startVol) * progress
+      audio.volume  = Math.max(0, Math.min(1, nextVol))
       if (progress < 1) {
         fadeTimerRef.current = requestAnimationFrame(tick)
       } else {
