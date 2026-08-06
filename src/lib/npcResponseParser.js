@@ -30,7 +30,7 @@
  * spoken dialogue, so this regex is the only delimiter needed.
  * Non-greedy so adjacent quoted segments are captured separately.
  */
-const QUOTE_RE = /["'「""]((?:[^"'」""\\]|\\.)*?)["'」""]/g
+const QUOTE_RE = /"([^"]*)"|「([^」]*)」|"([^"]*)"|(?<!\w)'([^']*)'/g
 
 /**
  * Extract clean spoken dialogue and merged narration from a raw npcResponse string.
@@ -51,9 +51,9 @@ export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   let match
   QUOTE_RE.lastIndex = 0
   while ((match = QUOTE_RE.exec(rawWithoutBrackets)) !== null) {
-    const spoken = match[1].trim()
-    if (spoken) quotedSegments.push(spoken)
-  }
+  const spoken = (match[1] ?? match[2] ?? match[3] ?? match[4] ?? '').trim()
+  if (spoken) quotedSegments.push(spoken)
+}
 
   // If no quoted segments found the entire npcResponse is treated as plain dialogue
   // (model complied perfectly or returned a simple unquoted string).
