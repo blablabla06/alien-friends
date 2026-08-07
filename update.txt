@@ -36,3 +36,6 @@
 
 9th version -- 6 August 2026
 - deploy to cloud
+
+10th version -- 7 August 2026
+- fix main mode's UI issue
