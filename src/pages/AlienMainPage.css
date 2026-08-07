@@ -19,7 +19,9 @@
 
 .af-story-shell {
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   background: #1A1D29;
   color: #EDEBE4;
   display: flex;
@@ -42,6 +44,13 @@
   position: sticky;
   top: 0;
   z-index: 10;
+}
+
+.af-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
 }
 
 .af-topbar-title {
@@ -1422,28 +1431,298 @@
 
 @media (max-width: 560px) {
   :root {
-    --af-dialogue-h: 22vh; /* slightly taller dialogue on mobile */
+    --af-dialogue-h: 20vh;
   }
 
   .af-topbar {
-    padding: 10px 14px;
+    padding: 8px 148px 8px 10px;
+    gap: 10px;
+  }
+
+  .af-topbar-title {
+    min-width: 0;
+  }
+
+  .af-topbar-title strong {
+    display: block;
+    max-width: calc(100vw - 178px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-size: 14px;
+  }
+
+  .af-topbar-title span {
+    font-size: 10px;
+  }
+
+  .af-topbar-actions {
+    position: absolute;
+    top: 50%;
+    right: 8px;
+    display: grid;
+    grid-template-columns: 34px 34px 52px;
+    width: 132px;
+    gap: 6px;
+    transform: translateY(-50%);
+  }
+
+  .af-ghost-button {
+    min-width: 0;
+    min-height: 34px;
+    padding: 0 !important;
+    font-size: 11px;
+  }
+
+  .af-topbar-actions .af-ghost-button:nth-child(-n + 2) {
+    display: grid;
+    place-items: center;
+    width: 34px;
+    min-width: 34px;
+    padding: 0 !important;
+    font-size: 15px !important;
+  }
+
+  .af-topbar-actions .af-ghost-button:last-child {
+    min-width: 0;
+    padding: 0 !important;
   }
 
   .af-stage {
-    padding: 10px;
-    grid-template-rows: clamp(280px, 50vh, 400px) 1fr;
+    padding: 8px;
+    gap: 8px;
+    grid-template-rows: minmax(0, clamp(310px, 42vh, 365px)) auto;
+    grid-template-rows: minmax(0, clamp(310px, 42svh, 365px)) auto;
+    align-content: start;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .af-visual {
+    min-height: 0;
+    border-radius: 14px;
+    box-shadow: 0 10px 34px rgba(0,0,0,0.32);
+  }
+
+  .af-visual::after {
+    border-radius: 14px;
   }
 
   .af-scene-content {
-    padding: 14px 14px 0;
+    padding: 12px 12px 0;
+  }
+
+  .af-scene-meta {
+    gap: 6px;
+  }
+
+  .af-scene-meta .af-pill {
+    max-width: calc(50% - 3px);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .af-pill {
+    padding: 4px 7px;
+    font-size: 9px;
+    text-transform: none;
+  }
+
+  .af-title-block {
+    max-width: calc(100% - 116px);
+    margin-top: 8px;
   }
 
   .af-title-block h1 {
-    font-size: clamp(22px, 7vw, 34px);
+    font-size: clamp(25px, 6.6vw, 32px);
+    line-height: 1.04;
+  }
+
+  .af-title-block p {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.4;
+  }
+
+  .af-speaker-line {
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .af-speaker-identity {
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .af-speaker-portrait {
+    width: 30px;
+    height: 30px;
+  }
+
+  .af-speaker-name {
+    font-size: 12px;
+  }
+
+  .af-speaker-role {
+    font-size: 10px;
   }
 
   .af-line {
-    font-size: clamp(15px, 4vw, 18px);
+    font-size: clamp(16px, 4.6vw, 19px);
+    line-height: 1.34;
+  }
+
+  .af-narration {
+    margin-top: 6px;
+    font-size: 12px;
+    line-height: 1.45;
+  }
+
+  .af-dialogue {
+    padding: 10px 12px 12px;
+    max-height: clamp(170px, 27vh, 215px);
+    max-height: clamp(170px, 27svh, 215px);
+  }
+
+  .af-dialogue-scroll {
+    gap: 7px;
+    padding-right: 0;
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
+
+  .af-side {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow-y: visible;
+  }
+
+  .af-progress-panel {
+    order: 1;
+  }
+
+  .af-choice-panel,
+  .af-continue-panel {
+    order: 2;
+  }
+
+  .af-input-panel {
+    order: 3;
+  }
+
+  .af-roster-panel {
+    order: 4;
+  }
+
+  .af-feedback-panel {
+    order: 5;
+  }
+
+  .af-panel {
+    border-radius: 10px;
+    padding: 10px;
+  }
+
+  .af-panel h2,
+  .af-panel h3 {
+    margin-bottom: 7px;
+    font-size: 12px;
+  }
+
+  .af-choice-list,
+  .af-skeleton-list {
+    gap: 7px;
+  }
+
+  .af-choice-button,
+  .af-skeleton-card {
+    border-radius: 10px;
+    padding: 9px 10px;
+  }
+
+  .af-choice-text {
+    font-size: 13px;
+    line-height: 1.42;
+  }
+
+  .af-final-input textarea {
+    min-height: 68px;
+    max-height: 130px;
+    font-size: 13px;
+  }
+
+  .af-primary-button {
+    padding: 10px 12px;
+  }
+
+  .af-roster-panel {
+    overflow: hidden;
+  }
+
+  .af-roster-list {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    padding: 1px 2px 4px;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+  }
+
+  .af-roster-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .af-roster-item {
+    min-width: min(72vw, 250px);
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: start;
+    gap: 8px;
+    padding: 8px;
+    scroll-snap-align: start;
+  }
+
+  .af-character-face {
+    width: 34px;
+    height: 34px;
+  }
+
+  .af-roster-topline {
+    align-items: flex-start;
+  }
+
+  .af-character-name {
+    font-size: 12px;
+  }
+
+  .af-roster-tag,
+  .af-speaking-dot {
+    padding: 2px 6px;
+    font-size: 9px;
+  }
+
+  .af-roster-detail {
+    display: -webkit-box;
+    overflow: hidden;
+    white-space: normal;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    font-size: 10px;
+  }
+
+  .af-roster-alien-block {
+    gap: 4px;
+  }
+
+  .af-roster-alien-status,
+  .af-roster-alien-meter-row {
+    font-size: 9px;
   }
 
   .af-meter-stack,
@@ -1452,12 +1731,32 @@
     grid-template-columns: 1fr;
   }
 
-  /* Hide full-body on mobile — dialogue anchors to scene bottom alone */
   .af-character-fullbody {
-    display: none;
+    display: block;
+    right: -6px;
+    bottom: clamp(146px, 20svh, 172px);
+    height: clamp(150px, 24svh, 198px);
+    max-width: 46%;
+    opacity: 0.95;
+    z-index: 2;
+    filter: drop-shadow(0 14px 24px rgba(0,0,0,0.38));
+    -webkit-mask-image: linear-gradient(to top, transparent 0%, black 10%, black 100%);
+    mask-image: linear-gradient(to top, transparent 0%, black 10%, black 100%);
   }
 
-  .af-dialogue {
-    padding: 12px 14px 14px;
+  .af-character-fullbody.flipped {
+    right: auto;
+    left: -6px;
+  }
+
+  .af-alien-filter-badge {
+    top: auto;
+    right: auto;
+    left: 12px;
+    bottom: calc(var(--af-dialogue-h) + 10px);
+    max-width: min(42vw, 150px);
+    padding: 5px 9px 5px 7px;
+    font-size: 9px;
+    line-height: 1;
   }
 }

@@ -1360,7 +1360,7 @@ export default function AlienMainPage() {
           <strong>Alien, Apparently</strong>
           <span>{ui.subtitle}</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className="af-topbar-actions">
           <button
             className="af-ghost-button"
             aria-label={isMuted ? 'Unmute voice' : 'Mute voice'}
@@ -1723,7 +1723,7 @@ export default function AlienMainPage() {
             />
 
             {/* Turn counter + chapter progress indicator */}
-            <section className="af-panel" style={{ padding: '10px 14px', background: 'rgba(237,235,228,0.04)' }}>
+            <section className="af-panel af-progress-panel" style={{ padding: '10px 14px', background: 'rgba(237,235,228,0.04)' }}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px', color: 'rgba(237,235,228,0.6)' }}>
                 <span>Turn {turnCount + 1} / {MAX_TURNS_PER_CHAPTER}</span>
                 <span>Chapter {sceneIndex + 1} / {SCENES.length}</span>
@@ -1732,7 +1732,7 @@ export default function AlienMainPage() {
 
             {/* AI-generated suggested replies */}
             {!awaitingChapterAdvance && !initLoading && suggestedReplies.length > 0 && (
-              <section className="af-panel">
+              <section className="af-panel af-choice-panel">
                 <h2>{ui.chooseResponse || 'Suggested Replies'}</h2>
                 {/* While the NPC reply + next batch of suggestions are loading, show skeleton */}
                 {isLoading ? (
@@ -1776,7 +1776,7 @@ export default function AlienMainPage() {
 
             {/* Loading state for initial suggestions (very first turn) */}
             {initLoading && !awaitingChapterAdvance && (
-              <section className="af-panel">
+              <section className="af-panel af-choice-panel">
                 <h2>{ui.chooseResponse || 'Suggested Replies'}</h2>
                 <div className="af-skeleton-list">
                   {[0,1,2].map(i => (
@@ -1798,7 +1798,7 @@ export default function AlienMainPage() {
 
             {/* Continue button — shown after the final NPC reply, before chapter advance */}
             {awaitingChapterAdvance && (
-              <section className="af-panel" style={{ textAlign: 'center', padding: '20px 14px' }}>
+              <section className="af-panel af-continue-panel" style={{ textAlign: 'center', padding: '20px 14px' }}>
                 <p style={{ fontSize: '13px', color: 'rgba(237,235,228,0.6)', marginBottom: '14px' }}>
                   {sceneIndex >= SCENES.length - 1 ? 'End of story reached.' : `Chapter ${sceneIndex + 1} complete.`}
                 </p>
@@ -1814,7 +1814,7 @@ export default function AlienMainPage() {
 
             {/* Free-text input (hidden after final turn) */}
             {!awaitingChapterAdvance && (
-            <section className="af-panel">
+            <section className="af-panel af-input-panel">
               <h2>{ui.writeOwn || 'Or write your own'}</h2>
               <div className="af-final-input">
                 <textarea
@@ -1843,7 +1843,7 @@ export default function AlienMainPage() {
 
             {/* Last feedback (if available) */}
             {lastFeedback && (
-              <section className="af-panel">
+              <section className="af-panel af-feedback-panel">
                 <p className="af-feedback" style={{ fontSize: '12px', opacity: 0.8, margin: 0 }}>
                   {p(lastFeedback)}
                 </p>
