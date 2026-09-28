@@ -45,7 +45,7 @@ It has two connected experiences:
 
 ## Getting started
 
-**Requirements:** Node.js 18+ and a DeepSeek API key.
+**Requirements:** Node.js 20.19+ or 22.12+ and a DeepSeek API key.
 
 ```bash
 git clone https://github.com/blablabla06/alien-friends.git
