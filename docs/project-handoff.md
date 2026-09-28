@@ -1,12 +1,12 @@
-# Alien, Apparently — Full Project Handoff for Codex
+# Alien, Apparently — Project Design Document
 
 ## 0. Purpose of This Document
 
-This document is a complete handoff for building **Alien, Apparently**, a browser-based AI-powered interactive visual novel for the **Tencent Cloud × UTM Hackathon 2026 — Game Track**.
+This document is a complete design reference for **Alien, Apparently**, a browser-based AI-powered interactive visual novel for the **Tencent Cloud × UTM Hackathon 2026 — Game Track**.
 
-It consolidates the project idea, gameplay concept, AI system, technical architecture, content structure, development plan, team responsibilities, hackathon requirements, risks, and completion criteria.
+It consolidates the project idea, gameplay concept, AI system, technical architecture, content structure, development plan, hackathon requirements, risks, and completion criteria.
 
-The intended reader is Codex, CodeBuddy, Claude, or another AI coding assistant helping the team implement the project.
+It was written at the start of the project as the shared reference for the team and for the AI coding assistants used during development. Some planned details changed during the build; the code in this repository reflects the final implementation.
 
 ---
 
@@ -1787,132 +1787,7 @@ Complete:
 
 ---
 
-# 31. Team Responsibilities
-
-## Connie
-
-- Product direction
-- Story design
-- Character relationships
-- User flow
-- Visual novel frontend
-- Dialogue UI
-- Group chat UI
-- Score presentation
-- User testing
-- Proposal
-- PPT
-- Pitch
-- Demo flow
-
-## Jia Ji
-
-- Backend
-- AI architecture
-- Prompt design
-- Free-text classification
-- Tone analysis
-- Character memory
-- NPC response logic
-- Rumour Mutation
-- State transitions
-- Ending logic
-- Technical testing
-
-## Shared
-
-- Final story review
-- AI-generated assets
-- Integration
-- Playtesting
-- Demo video
-- Submission
-- CodeBuddy documentation
-
----
-
-# 32. Development Timeline
-
-## Day 1
-
-- Scope lock
-- Team roles
-- Story
-- Characters
-- Levels
-- MVP freeze
-
-## Day 2–3
-
-- Story bible
-- Scripts
-- Wireframes
-- Data models
-- Prompt rules
-
-## Day 4–6
-
-- Frontend core
-- Visual novel engine
-- Choices
-- Group chat
-- Basic state
-
-## Day 7–9
-
-- AI backend
-- Classification
-- NPC response
-- Memory
-- Fallbacks
-
-## Day 10–11
-
-- Rumour Mutation
-- Alien Filter
-- Perspective Shift
-- Endings
-
-## Day 12
-
-- First complete playable build
-- Runtime check
-- Remove slow content
-
-## Day 13
-
-- Generator prototype
-- Scenario JSON
-
-## Day 14
-
-- Internal testing
-- AI latency
-- Failure handling
-- Browser compatibility
-
-## Day 15
-
-- User testing with 5–8 users
-
-## Day 16
-
-- Fixes
-- Demo recording
-- PPT
-- Submission preparation
-
-## Submission Day
-
-- Regression test
-- Deploy
-- Verify link
-- Export CodeBuddy history
-- Upload early
-
----
-
-# 33. MVP Freeze
+# 31. MVP Freeze
 
 ## Must Have
 
@@ -1959,7 +1834,7 @@ Complete:
 
 ---
 
-# 34. Testing Plan
+# 32. Testing Plan
 
 ## Functional
 
@@ -2004,7 +1879,7 @@ Questions:
 
 ---
 
-# 35. Success Metrics
+# 33. Success Metrics
 
 The MVP succeeds if:
 
@@ -2019,7 +1894,7 @@ The MVP succeeds if:
 
 ---
 
-# 36. Submission Requirements
+# 34. Submission Requirements
 
 Prepare:
 
@@ -2047,7 +1922,7 @@ PPT should include:
 
 ---
 
-# 37. Judging Strategy
+# 35. Judging Strategy
 
 Weights:
 
@@ -2093,7 +1968,7 @@ Show:
 
 ---
 
-# 38. Risks and Mitigation
+# 36. Risks and Mitigation
 
 ## AI Goes Off Topic
 
@@ -2143,7 +2018,7 @@ Show:
 
 ---
 
-# 39. Definition of Done
+# 37. Definition of Done
 
 The project is done when:
 
@@ -2164,96 +2039,7 @@ The project is done when:
 
 ---
 
-# 40. First Tasks for Codex
-
-## Task 1 — Repository
-
-Create frontend, backend, docs, data, and deployment folders.
-
-## Task 2 — Types
-
-Create data types for:
-
-- Character
-- Scene
-- Dialogue
-- Decision
-- Choice
-- Score
-- Game state
-- Ending
-
-## Task 3 — Static Story Data
-
-Create:
-
-- characters.json
-- scenes.json
-- endings.json
-- fallbackResponses.json
-
-## Task 4 — Non-AI Engine
-
-Implement:
-
-- Scene renderer
-- Dialogue
-- Portraits
-- Choices
-- Free-text placeholder
-- Transitions
-- Basic score
-- Full flow
-
-## Task 5 — Group Chat
-
-Implement original message, interpretation, retelling, and player response.
-
-## Task 6 — AI API Stubs
-
-Mock:
-
-- classify-response
-- npc-response
-- growth-report
-- generate-scenario
-
-## Task 7 — Real AI
-
-Replace mock endpoints with Tencent-compatible AI integration.
-
-## Task 8 — Signature Mechanics
-
-Implement:
-
-- Alien Filter
-- Perspective Shift
-- Endings
-- Final report
-
-## Task 9 — Mission Hub
-
-Implement:
-
-- Level
-- XP
-- Badge
-- Daily mission
-- Start
-
-## Task 10 — Deployment
-
-Provide:
-
-- Environment variable setup
-- Build commands
-- Deployment steps
-- Health check
-- Public URL verification
-
----
-
-# 41. Final Project Statement
+# 38. Final Project Statement
 
 **Alien, Apparently** is not a game that teaches players to like everyone.
 
