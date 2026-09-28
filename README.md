@@ -3,6 +3,7 @@
 **A bilingual (English / 中文) AI-powered visual novel about how people get labelled "the alien" — and what it takes to reach them.**
 
 🏆 Top 5, Game Track — AI CAN DO IT Hackathon 2026 Malaysia
+
 🎮 Play it live: https://alien-friends.alien-friends.workers.dev
 
 ---
