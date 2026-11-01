@@ -1,4 +1,4 @@
-const QUOTE_RE = /"([^"]*)"|「([^」]*)」|"([^"]*)"/g
+const QUOTE_RE = /"([^"]*)"|「([^」]*)」|“([^”]*)”/g
 
 export function extractCleanDialogue(npcResponseRaw, npcActionRaw = null) {
   const raw = String(npcResponseRaw ?? '').trim()
