@@ -8,7 +8,7 @@ describe('getEnding', () => {
 
     const result = getEnding(scores, hidden)
 
-    expect(result.name).toBe('Exclusion')
+    expect(result.name).toBe('Exclusionx')
   })
 
   it('returns Exclusion when rumour reaches 70', () => {
